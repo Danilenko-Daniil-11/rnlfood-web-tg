@@ -47,6 +47,24 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Admin middleware
+const requireAdmin = async (req, res, next) => {
+    try {
+        const result = await pool.query(`
+            SELECT ur.role 
+            FROM user_roles ur 
+            WHERE ur.user_id = $1
+        `, [req.user.userId]);
+        
+        if (result.rows.length === 0 || result.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: 'Требуются права администратора' });
+        }
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Ошибка проверки прав' });
+    }
+};
+
 // API маршруты для аутентификации
 app.post('/api/register', async (req, res) => {
     try {
@@ -135,9 +153,10 @@ app.post('/api/login', async (req, res) => {
 
         // Находим пользователя
         const userResult = await pool.query(`
-            SELECT u.*, p.full_name, p.class_name, p.balance 
+            SELECT u.*, p.full_name, p.class_name, p.balance, ur.role
             FROM users u 
             LEFT JOIN profiles p ON u.id = p.user_id 
+            LEFT JOIN user_roles ur ON u.id = ur.user_id
             WHERE u.username = $1
         `, [username]);
 
@@ -155,7 +174,7 @@ app.post('/api/login', async (req, res) => {
 
         // Генерируем JWT токен
         const token = jwt.sign(
-            { userId: user.id, username: user.username },
+            { userId: user.id, username: user.username, role: user.role },
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -168,7 +187,8 @@ app.post('/api/login', async (req, res) => {
                 username: user.username,
                 full_name: user.full_name,
                 class_name: user.class_name,
-                balance: parseFloat(user.balance)
+                balance: parseFloat(user.balance),
+                role: user.role
             }
         });
 
@@ -354,6 +374,8 @@ app.post('/api/topup', authenticateToken, async (req, res) => {
 // API для получения истории заказов
 app.get('/api/orders/history', authenticateToken, async (req, res) => {
     try {
+        const { limit = 10, offset = 0 } = req.query;
+        
         const result = await pool.query(`
             SELECT o.*, 
                    json_agg(
@@ -370,13 +392,264 @@ app.get('/api/orders/history', authenticateToken, async (req, res) => {
             WHERE o.user_id = $1
             GROUP BY o.id
             ORDER BY o.created_at DESC
-            LIMIT 10
+            LIMIT $2 OFFSET $3
+        `, [req.user.userId, limit, offset]);
+        
+        // Получаем общее количество для пагинации
+        const countResult = await pool.query(`
+            SELECT COUNT(*) FROM orders WHERE user_id = $1
         `, [req.user.userId]);
         
-        res.json(result.rows);
+        res.json({
+            orders: result.rows,
+            total: parseInt(countResult.rows[0].count),
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
     } catch (error) {
         console.error('Error fetching order history:', error);
         res.status(500).json({ error: 'Ошибка загрузки истории заказов' });
+    }
+});
+
+// API для получения деталей заказа
+app.get('/api/orders/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(`
+            SELECT o.*, 
+                   json_agg(
+                       json_build_object(
+                           'name', m.name,
+                           'quantity', oi.quantity,
+                           'unit_price', oi.unit_price,
+                           'total_price', oi.total_price
+                       )
+                   ) as items,
+                   p.code as promocode
+            FROM orders o
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            LEFT JOIN meals m ON oi.meal_id = m.id
+            LEFT JOIN promocodes p ON o.promocode_id = p.id
+            WHERE o.id = $1 AND o.user_id = $2
+            GROUP BY o.id, p.code
+        `, [id, req.user.userId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        res.status(500).json({ error: 'Ошибка загрузки деталей заказа' });
+    }
+});
+
+// API для обновления профиля
+app.post('/api/update-profile', authenticateToken, async (req, res) => {
+    try {
+        const { full_name, class_name } = req.body;
+        const user_id = req.user.userId;
+        
+        await pool.query(`
+            UPDATE profiles 
+            SET full_name = $1, class_name = $2, updated_at = NOW()
+            WHERE user_id = $3
+        `, [full_name, class_name, user_id]);
+        
+        res.json({ success: true });
+        
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Ошибка обновления профиля' });
+    }
+});
+
+// АДМИН API
+
+// Получение статистики
+app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const [
+            totalUsers,
+            totalOrders,
+            todayOrders,
+            totalRevenue,
+            todayRevenue,
+            popularMeals
+        ] = await Promise.all([
+            pool.query('SELECT COUNT(*) FROM users'),
+            pool.query('SELECT COUNT(*) FROM orders'),
+            pool.query('SELECT COUNT(*) FROM orders WHERE DATE(created_at) = $1', [today]),
+            pool.query('SELECT COALESCE(SUM(final_amount), 0) as total FROM orders'),
+            pool.query('SELECT COALESCE(SUM(final_amount), 0) as total FROM orders WHERE DATE(created_at) = $1', [today]),
+            pool.query(`
+                SELECT m.name, COUNT(oi.id) as order_count
+                FROM order_items oi
+                JOIN meals m ON oi.meal_id = m.id
+                GROUP BY m.id, m.name
+                ORDER BY order_count DESC
+                LIMIT 5
+            `)
+        ]);
+        
+        res.json({
+            users: parseInt(totalUsers.rows[0].count),
+            total_orders: parseInt(totalOrders.rows[0].count),
+            today_orders: parseInt(todayOrders.rows[0].count),
+            total_revenue: parseFloat(totalRevenue.rows[0].total),
+            today_revenue: parseFloat(todayRevenue.rows[0].total),
+            popular_meals: popularMeals.rows
+        });
+    } catch (error) {
+        console.error('Error fetching admin stats:', error);
+        res.status(500).json({ error: 'Ошибка загрузки статистики' });
+    }
+});
+
+// Получение всех заказов
+app.get('/api/admin/orders', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { status, limit = 50, offset = 0 } = req.query;
+        
+        let query = `
+            SELECT o.*, u.username, p.full_name, p.class_name
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            JOIN profiles p ON u.id = p.user_id
+        `;
+        let params = [];
+        let paramCount = 0;
+        
+        if (status) {
+            query += ` WHERE o.status = $${++paramCount}`;
+            params.push(status);
+        }
+        
+        query += ` ORDER BY o.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+        params.push(limit, offset);
+        
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching admin orders:', error);
+        res.status(500).json({ error: 'Ошибка загрузки заказов' });
+    }
+});
+
+// Обновление статуса заказа
+app.put('/api/admin/orders/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        const result = await pool.query(`
+            UPDATE orders 
+            SET status = $1, updated_at = NOW()
+            WHERE id = $2
+            RETURNING *
+        `, [status, id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        res.status(500).json({ error: 'Ошибка обновления статуса заказа' });
+    }
+});
+
+// Управление меню
+app.get('/api/admin/meals', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT m.*, mc.name as category_name
+            FROM meals m
+            LEFT JOIN meal_categories mc ON m.category_id = mc.id
+            ORDER BY m.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching admin meals:', error);
+        res.status(500).json({ error: 'Ошибка загрузки меню' });
+    }
+});
+
+app.post('/api/admin/meals', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { name, price, category_id, description, is_available, preparation_time } = req.body;
+        
+        const result = await pool.query(`
+            INSERT INTO meals (name, price, category_id, description, is_available, preparation_time)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `, [name, price, category_id, description, is_available, preparation_time]);
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating meal:', error);
+        res.status(500).json({ error: 'Ошибка создания блюда' });
+    }
+});
+
+app.put('/api/admin/meals/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, price, category_id, description, is_available, preparation_time } = req.body;
+        
+        const result = await pool.query(`
+            UPDATE meals 
+            SET name = $1, price = $2, category_id = $3, description = $4, 
+                is_available = $5, preparation_time = $6, updated_at = NOW()
+            WHERE id = $7
+            RETURNING *
+        `, [name, price, category_id, description, is_available, preparation_time, id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Блюдо не найдено' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating meal:', error);
+        res.status(500).json({ error: 'Ошибка обновления блюда' });
+    }
+});
+
+// Управление промокодами
+app.get('/api/admin/promocodes', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM promocodes 
+            ORDER BY created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching promocodes:', error);
+        res.status(500).json({ error: 'Ошибка загрузки промокодов' });
+    }
+});
+
+app.post('/api/admin/promocodes', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { code, discount_percentage, max_uses, expires_at } = req.body;
+        
+        const result = await pool.query(`
+            INSERT INTO promocodes (code, discount_percentage, max_uses, expires_at, created_by)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *
+        `, [code.toUpperCase(), discount_percentage, max_uses, expires_at, req.user.userId]);
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating promocode:', error);
+        res.status(500).json({ error: 'Ошибка создания промокода' });
     }
 });
 
@@ -402,27 +675,6 @@ app.get('/api/health', async (req, res) => {
         res.status(500).json({ status: 'ERROR', database: 'Neon disconnected' });
     }
 });
-
-// API для обновления профиля
-app.post('/api/update-profile', authenticateToken, async (req, res) => {
-    try {
-        const { full_name, class_name } = req.body;
-        const user_id = req.user.userId;
-        
-        await pool.query(`
-            UPDATE profiles 
-            SET full_name = $1, class_name = $2, updated_at = NOW()
-            WHERE user_id = $3
-        `, [full_name, class_name, user_id]);
-        
-        res.json({ success: true });
-        
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ error: 'Ошибка обновления профиля' });
-    }
-});
-
 
 // Все остальные маршруты ведут на index.html
 app.get('*', (req, res) => {
