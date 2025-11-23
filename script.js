@@ -188,10 +188,10 @@ async function register() {
     }
 }
 
-
 function logout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');
     sessionStorage.removeItem('currentUser');
     document.getElementById('logout-btn').style.display = 'none';
     
@@ -220,36 +220,41 @@ async function loadUserData() {
 
 async function loadProducts() {
     try {
-        const { data, error } = await supabase
-            .from('menu')
-            .select('*')
-            .order('id');
-        
-        if (error) throw error;
+        const data = await apiRequest('/api/menu');
         
         if (data && data.length > 0) {
             products = data.map(item => ({
                 id: item.id,
                 name: item.name,
                 price: parseFloat(item.price),
-                category: item.category || 'Горячее',
-                icon: item.icon || 'fas fa-utensils',
+                category: item.category_name || 'Горячее',
+                icon: getCategoryIcon(item.category_name),
                 description: item.description
             }));
         } else {
             // Fallback данные если таблица пустая
             products = [
-                { id: 1, name: "Куриный суп", price: 25, category: "Горячее", icon: "fas fa-utensil-spoon" },
-                { id: 2, name: "Гречневая каша", price: 30, category: "Горячее", icon: "fas fa-apple-alt" },
-                { id: 3, name: "Котлета с пюре", price: 40, category: "Горячее", icon: "fas fa-drumstick-bite" },
-                { id: 4, name: "Чай", price: 15, category: "Напитки", icon: "fas fa-coffee" },
-                { id: 5, name: "Компот", price: 12, category: "Напитки", icon: "fas fa-glass-whiskey" }
+                { id: "1", name: "Куриный суп", price: 25, category: "Горячее", icon: "fas fa-utensil-spoon" },
+                { id: "2", name: "Гречневая каша", price: 30, category: "Горячее", icon: "fas fa-apple-alt" },
+                { id: "3", name: "Котлета с пюре", price: 40, category: "Горячее", icon: "fas fa-drumstick-bite" },
+                { id: "4", name: "Чай", price: 15, category: "Напитки", icon: "fas fa-coffee" },
+                { id: "5", name: "Компот", price: 12, category: "Напитки", icon: "fas fa-glass-whiskey" }
             ];
         }
     } catch (error) {
         console.error('Ошибка загрузки продуктов:', error);
         showNotification('Ошибка загрузки меню', 'error');
     }
+}
+
+function getCategoryIcon(categoryName) {
+    const icons = {
+        'Горячее': 'fas fa-utensils',
+        'Напитки': 'fas fa-coffee',
+        'Салаты': 'fas fa-leaf',
+        'Десерты': 'fas fa-ice-cream'
+    };
+    return icons[categoryName] || 'fas fa-utensils';
 }
 
 function updateProfile() {
@@ -288,13 +293,7 @@ async function saveProfile() {
     showLoading(true);
     
     try {
-        const { error } = await supabase
-            .from('users')
-            .update({ full_name: name })
-            .eq('id', currentUser.id);
-        
-        if (error) throw error;
-        
+        // Обновляем данные пользователя локально
         currentUser.full_name = name;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
@@ -314,17 +313,7 @@ async function loadOrderHistory() {
     if (!currentUser) return;
     
     try {
-        const { data, error } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                menu:menu_id(name)
-            `)
-            .eq('user_id', currentUser.id)
-            .order('created_at', { ascending: false })
-            .limit(5);
-        
-        if (error) throw error;
+        const data = await apiRequest('/api/orders/history');
         
         const historyContainer = document.getElementById('order-history-list');
         historyContainer.innerHTML = '';
@@ -337,12 +326,18 @@ async function loadOrderHistory() {
         data.forEach(order => {
             const orderElement = document.createElement('div');
             orderElement.className = 'order-item';
+            
+            // Формируем список товаров
+            const itemsText = order.items ? order.items.map(item => 
+                `${item.name} x${item.quantity}`
+            ).join(', ') : 'Заказ';
+            
             orderElement.innerHTML = `
                 <div class="order-info">
-                    <span class="order-name">${order.menu?.name || 'Заказ'}</span>
+                    <span class="order-name">${itemsText}</span>
                     <span class="order-date">${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
                 </div>
-                <span class="order-price">${order.total_price} ₴</span>
+                <span class="order-price">${order.final_amount} ₴</span>
             `;
             historyContainer.appendChild(orderElement);
         });
@@ -377,15 +372,15 @@ function initializeAssortment() {
             <div class="item-price">${product.price} ₴</div>
             <div class="item-actions">
                 <div class="quantity-controls">
-                    <button class="quantity-btn" onclick="decreaseQuantity(${product.id})" ${quantity === 0 ? 'disabled' : ''}>
+                    <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
                         <i class="fas fa-minus"></i>
                     </button>
                     <span class="quantity" id="quantity-${product.id}">${quantity}</span>
-                    <button class="quantity-btn" onclick="increaseQuantity(${product.id})">
+                    <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
-                <button class="add-to-cart" onclick="addToCart(${product.id})" ${quantity > 0 ? 'style="display:none"' : ''}>
+                <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
                     <i class="fas fa-cart-plus"></i>
                 </button>
             </div>
@@ -518,7 +513,7 @@ function updateCartSummary() {
                 </div>
                 <div class="cart-item-controls">
                     <span class="cart-item-total">${itemTotal} ₴</span>
-                    <button class="btn-clear" onclick="removeFromCart(${productId})">
+                    <button class="btn-clear" onclick="removeFromCart('${productId}')">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -527,7 +522,7 @@ function updateCartSummary() {
         }
     }
     
-    promoDiscount = activePromo ? (total * activePromo.discount_percent / 100) : 0;
+    promoDiscount = activePromo ? (total * (activePromo.discount_percentage || activePromo.discount_percent) / 100) : 0;
     const finalAmount = total - promoDiscount;
     
     cartTotal.textContent = `${total.toFixed(2)} ₴`;
@@ -568,39 +563,24 @@ async function applyPromo() {
     }
     
     try {
-        const { data: promo, error } = await supabase
-            .from('promo_codes')
-            .select('*')
-            .eq('code', promoCode)
-            .gte('expires_at', new Date().toISOString())
-            .single();
+        const data = await apiRequest('/api/validate-promo', {
+            method: 'POST',
+            body: { code: promoCode }
+        });
         
-        if (error || !promo) {
-            promoMessage.textContent = 'Промокод не найден или истек';
+        if (!data.valid) {
+            promoMessage.textContent = data.message;
             promoMessage.className = 'promo-message error';
             return;
         }
         
-        // Проверяем, использовал ли пользователь уже этот промокод
-        const { data: usage } = await supabase
-            .from('promo_uses')
-            .select('id')
-            .eq('promo_id', promo.id)
-            .eq('user_id', currentUser.id)
-            .single();
-        
-        if (usage) {
-            promoMessage.textContent = 'Вы уже использовали этот промокод';
-            promoMessage.className = 'promo-message error';
-            return;
-        }
-        
-        activePromo = promo;
+        activePromo = data.promo;
         updateCartSummary();
         
-        promoMessage.textContent = `Промокод применен! Скидка ${promo.discount_percent}%`;
+        const discountPercent = activePromo.discount_percentage || activePromo.discount_percent;
+        promoMessage.textContent = `Промокод применен! Скидка ${discountPercent}%`;
         promoMessage.className = 'promo-message success';
-        showNotification(`Промокод "${promoCode}" применен! Скидка ${promo.discount_percent}%`, 'success');
+        showNotification(`Промокод "${promoCode}" применен! Скидка ${discountPercent}%`, 'success');
         
     } catch (error) {
         console.error('Ошибка применения промокода:', error);
@@ -611,30 +591,26 @@ async function applyPromo() {
 
 async function showPromoModal() {
     try {
-        const { data: promoCodes, error } = await supabase
-            .from('promo_codes')
-            .select('*')
-            .gte('expires_at', new Date().toISOString());
-        
-        if (error) throw error;
-        
+        // Для простоты покажем статические промокоды
         const promoList = document.getElementById('promo-list');
         promoList.innerHTML = '';
         
-        if (!promoCodes || promoCodes.length === 0) {
-            promoList.innerHTML = '<div class="no-promos">Активных промокодов нет</div>';
-        } else {
-            promoCodes.forEach(promo => {
-                const promoItem = document.createElement('div');
-                promoItem.className = 'promo-item';
-                promoItem.innerHTML = `
-                    <div class="promo-code">${promo.code}</div>
-                    <div class="promo-discount">Скидка ${promo.discount_percent}%</div>
-                    <div class="promo-expires">Действует до: ${new Date(promo.expires_at).toLocaleDateString('ru-RU')}</div>
-                `;
-                promoList.appendChild(promoItem);
-            });
-        }
+        const promoCodes = [
+            { code: 'WELCOME10', discount_percentage: 10, expires_at: '2025-12-31' },
+            { code: 'STUDENT15', discount_percentage: 15, expires_at: '2025-12-31' },
+            { code: 'SUMMER20', discount_percentage: 20, expires_at: '2025-08-31' }
+        ];
+        
+        promoCodes.forEach(promo => {
+            const promoItem = document.createElement('div');
+            promoItem.className = 'promo-item';
+            promoItem.innerHTML = `
+                <div class="promo-code">${promo.code}</div>
+                <div class="promo-discount">Скидка ${promo.discount_percentage}%</div>
+                <div class="promo-expires">Действует до: ${new Date(promo.expires_at).toLocaleDateString('ru-RU')}</div>
+            `;
+            promoList.appendChild(promoItem);
+        });
         
         openModal('promo-modal');
     } catch (error) {
@@ -658,27 +634,27 @@ async function placeOrder() {
     let total = 0;
     const orderItems = [];
     
-    // Создаем отдельные заказы для каждого товара (согласно структуре вашей БД)
+    // Формируем элементы заказа
     for (const productId in cart) {
         const product = products.find(p => p.id == productId);
         if (product && cart[productId] > 0) {
             const itemTotal = product.price * cart[productId];
             total += itemTotal;
             
-            // Создаем заказ для каждого товара
             orderItems.push({
-                menu_id: parseInt(productId),
+                meal_id: productId,
                 quantity: cart[productId],
+                unit_price: product.price,
                 total_price: itemTotal
             });
         }
     }
     
     // Применяем скидку
-    const finalTotal = total - promoDiscount;
+    const finalAmount = total - promoDiscount;
     
     // Проверяем баланс
-    if (currentUser.balance < finalTotal) {
+    if (currentUser.balance < finalAmount) {
         showNotification('Недостаточно средств на балансе', 'error');
         goTo('payment');
         return;
@@ -687,48 +663,19 @@ async function placeOrder() {
     showLoading(true);
     
     try {
-        // Создаем заказы для каждого товара
-        const orderPromises = orderItems.map(item => 
-            supabase
-                .from('orders')
-                .insert({
-                    user_id: currentUser.id,
-                    menu_id: item.menu_id,
-                    quantity: item.quantity,
-                    total_price: item.total_price
-                })
-        );
-        
-        await Promise.all(orderPromises);
+        const data = await apiRequest('/api/orders', {
+            method: 'POST',
+            body: {
+                items: orderItems,
+                promocode_id: activePromo?.id,
+                total_amount: total,
+                discount_amount: promoDiscount,
+                final_amount: finalAmount
+            }
+        });
         
         // Обновляем баланс пользователя
-        const { error: balanceError } = await supabase
-            .from('users')
-            .update({ balance: currentUser.balance - finalTotal })
-            .eq('id', currentUser.id);
-        
-        if (balanceError) throw balanceError;
-        
-        // Записываем использование промокода
-        if (activePromo) {
-            const { error: promoError } = await supabase
-                .from('promo_uses')
-                .insert({
-                    user_id: currentUser.id,
-                    promo_id: activePromo.id
-                });
-            
-            if (promoError) throw promoError;
-        }
-        
-        // Обновляем данные пользователя
-        const { data: updatedUser } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-        
-        currentUser = updatedUser;
+        currentUser.balance -= finalAmount;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
         // Показываем детали заказа
@@ -736,7 +683,7 @@ async function placeOrder() {
         orderDetailsList.innerHTML = '';
         
         orderItems.forEach(item => {
-            const product = products.find(p => p.id == item.menu_id);
+            const product = products.find(p => p.id == item.meal_id);
             if (product) {
                 const itemElement = document.createElement('div');
                 itemElement.className = 'order-detail-item';
@@ -762,7 +709,7 @@ async function placeOrder() {
         totalElement.className = 'order-detail-total';
         totalElement.innerHTML = `
             <span>Итого:</span>
-            <span>${finalTotal} ₴</span>
+            <span>${finalAmount} ₴</span>
         `;
         orderDetailsList.appendChild(totalElement);
         
@@ -774,7 +721,7 @@ async function placeOrder() {
         
     } catch (error) {
         console.error('Ошибка оформления заказа:', error);
-        showNotification('Ошибка оформления заказа. Попробуйте еще раз.', 'error');
+        showNotification(error.message || 'Ошибка оформления заказа. Попробуйте еще раз.', 'error');
     } finally {
         showLoading(false);
     }
@@ -837,34 +784,24 @@ async function processPayment(method) {
         case 'card':
             finalAmount = amount * 0.975;
             break;
+        case 'cash':
+            finalAmount = amount;
+            break;
     }
     
     showLoading(true);
     
     try {
-        // Обновляем баланс
-        const newBalance = parseFloat(currentUser.balance) + finalAmount;
-        const { error: balanceError } = await supabase
-            .from('users')
-            .update({ balance: newBalance })
-            .eq('id', currentUser.id);
-        
-        if (balanceError) throw balanceError;
-        
-        // Записываем транзакцию
-        const { error: transactionError } = await supabase
-            .from('topups')
-            .insert({
-                user_id: currentUser.id,
-                method: method,
-                amount: amount,
-                status: 'completed'
-            });
-        
-        if (transactionError) throw transactionError;
+        const data = await apiRequest('/api/topup', {
+            method: 'POST',
+            body: {
+                amount: finalAmount,
+                method: method
+            }
+        });
         
         // Обновляем данные пользователя
-        currentUser.balance = newBalance;
+        currentUser.balance = data.new_balance;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
         showNotification(`Баланс успешно пополнен на ${finalAmount.toFixed(2)} ₴`, 'success');
@@ -949,6 +886,4 @@ document.addEventListener('keydown', function(event) {
             modal.classList.remove('active');
         });
     }
-
 });
-
