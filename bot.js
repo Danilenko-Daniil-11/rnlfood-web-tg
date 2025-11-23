@@ -1,7 +1,6 @@
 import { Telegraf, Markup, session } from 'telegraf';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -58,14 +57,13 @@ async function showStartMenu(ctx) {
         ['ℹ️ О проекте', '🆘 Помощь']
     ]).resize();
 
-    await ctx.replyWithPhoto(
-        'https://via.placeholder.com/400x200/00b377/ffffff?text=RNL+FOOD',
+    await ctx.reply(
+        `🍽️ *РНЛ ЕДА - Официальный сервис питания*\n\n` +
+        `Быстрый заказ еды без очередей для учащихся Ришельевского лицея\n\n` +
+        `*MADE BY:*\n` +
+        `DANYLENKO DANIIL\n` +
+        `DMITRIEV KOLYA`,
         {
-            caption: `🍽️ *РНЛ ЕДА - Официальный сервис питания*\n\n` +
-                    `Быстрый заказ еды без очередей для учащихся Ришельевского лицея\n\n` +
-                    `*MADE BY:*\n` +
-                    `DANYLENKO DANIIL\n` +
-                    `DMITRIEV KOLYA`,
             parse_mode: 'Markdown',
             ...keyboard
         }
@@ -113,7 +111,7 @@ bot.hears('🆘 Помощь', async (ctx) => {
         `По вопросам работы бота обращайтесь к администрации лицея`,
         { parse_mode: 'Markdown' }
     );
-}
+});
 
 // Регистрация
 bot.hears('📝 Зарегистрироваться', async (ctx) => {
@@ -449,7 +447,7 @@ async function showMainMenu(ctx) {
         ['🚪 Выйти']
     ]).resize();
     
-    if (ctx.session.user.role === 'admin') {
+    if (ctx.session.user && ctx.session.user.role === 'admin') {
         keyboard.keyboard.push(['⚙️ Админ панель']);
     }
     
@@ -482,7 +480,7 @@ async function handleMainMenuInput(ctx, message) {
             await showPromoCodes(ctx);
             break;
         case '⚙️ Админ панель':
-            if (ctx.session.user.role === 'admin') {
+            if (ctx.session.user && ctx.session.user.role === 'admin') {
                 await showAdminPanel(ctx);
             }
             break;
