@@ -114,28 +114,14 @@ async function login() {
     showLoading(true);
     
     try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('username', username)
-            .single();
+        const data = await apiRequest('/api/login', {
+            method: 'POST',
+            body: { username, password }
+        });
         
-        if (error) throw error;
-        if (!data) throw new Error('Пользователь не найден');
-        
-        // Проверка пароля (в реальном приложении нужно хеширование)
-        if (data.password_hash !== password) {
-            throw new Error('Неверный пароль');
-        }
-        
-        currentUser = data;
-        
-        // Сохраняем пользователя
-        if (rememberMe) {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        } else {
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        }
+        currentUser = data.user;
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
         document.getElementById('logout-btn').style.display = 'flex';
         showNotification(`Добро пожаловать, ${username}!`, 'success');
@@ -175,34 +161,18 @@ async function register() {
     showLoading(true);
     
     try {
-        // Проверяем, существует ли пользователь
-        const { data: existingUser } = await supabase
-            .from('users')
-            .select('id')
-            .eq('username', username)
-            .single();
+        const data = await apiRequest('/api/register', {
+            method: 'POST',
+            body: {
+                username,
+                password,
+                full_name: fullname,
+                class_name: grade
+            }
+        });
         
-        if (existingUser) {
-            throw new Error('Пользователь с таким логином уже существует');
-        }
-        
-        const userData = {
-            username: username,
-            password_hash: password,
-            full_name: fullname,
-            balance: 0,
-            created_at: new Date().toISOString()
-        };
-        
-        const { data, error } = await supabase
-            .from('users')
-            .insert([userData])
-            .select()
-            .single();
-        
-        if (error) throw error;
-        
-        currentUser = data;
+        currentUser = data.user;
+        localStorage.setItem('token', data.token);
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         document.getElementById('logout-btn').style.display = 'flex';
         
@@ -217,6 +187,7 @@ async function register() {
         showLoading(false);
     }
 }
+
 
 function logout() {
     currentUser = null;
@@ -980,3 +951,4 @@ document.addEventListener('keydown', function(event) {
     }
 
 });
+
