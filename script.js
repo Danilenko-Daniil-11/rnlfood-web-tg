@@ -1537,3 +1537,50 @@ document.addEventListener('keydown', function(event) {
         });
     }
 });
+
+// Добавьте эту функцию в script.js
+
+// Функция переключения темы
+function toggleTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById('theme-toggle');
+    const icon = themeToggle.querySelector('i');
+    
+    if (body.classList.contains('light-theme')) {
+        body.classList.remove('light-theme');
+        body.classList.add('dark-theme');
+        icon.className = 'fas fa-sun';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        body.classList.remove('dark-theme');
+        body.classList.add('light-theme');
+        icon.className = 'fas fa-moon';
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Загрузка темы при загрузке страницы
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const body = document.body;
+    const themeToggle = document.getElementById('theme-toggle');
+    const icon = themeToggle.querySelector('i');
+    
+    if (savedTheme === 'dark') {
+        body.classList.remove('light-theme');
+        body.classList.add('dark-theme');
+        icon.className = 'fas fa-sun';
+    } else {
+        body.classList.remove('dark-theme');
+        body.classList.add('light-theme');
+        icon.className = 'fas fa-moon';
+    }
+}
+
+// Вызовите loadTheme() в функции инициализации
+document.addEventListener('DOMContentLoaded', async function() {
+    loadTheme(); // Добавьте эту строку
+    await loadUserData();
+    await loadProducts();
+    // ... остальной код инициализации
+});
