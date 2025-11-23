@@ -403,6 +403,27 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// API для обновления профиля
+app.post('/api/update-profile', authenticateToken, async (req, res) => {
+    try {
+        const { full_name, class_name } = req.body;
+        const user_id = req.user.userId;
+        
+        await pool.query(`
+            UPDATE profiles 
+            SET full_name = $1, class_name = $2, updated_at = NOW()
+            WHERE user_id = $3
+        `, [full_name, class_name, user_id]);
+        
+        res.json({ success: true });
+        
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Ошибка обновления профиля' });
+    }
+});
+
+
 // Все остальные маршруты ведут на index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
