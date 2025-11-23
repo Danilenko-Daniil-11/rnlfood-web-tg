@@ -50,7 +50,7 @@ const authenticateToken = (req, res, next) => {
 // API маршруты для аутентификации
 app.post('/api/register', async (req, res) => {
     try {
-        const { username, password, full_name, class_name } = req.body;
+        const { username, password, full_name, class_name, age, parents } = req.body;
         
         if (!username || !password || !full_name) {
             return res.status(400).json({ error: 'Заполните все обязательные поля' });
@@ -106,6 +106,8 @@ app.post('/api/register', async (req, res) => {
                     username: user.username,
                     full_name,
                     class_name,
+                    age: age,
+                    parents: parents,
                     balance: 0.00
                 }
             });
