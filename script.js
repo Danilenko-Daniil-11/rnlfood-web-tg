@@ -8,6 +8,58 @@ let activePromo = null;
 let promoDiscount = 0;
 let selectedAmount = 100;
 let products = [];
+let currentOrderPage = 1;
+let ordersPerPage = 10;
+
+// Анимации
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const value = Math.floor(progress * (end - start) + start);
+        element.textContent = value.toLocaleString();
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+function fadeIn(element, duration = 300) {
+    element.style.opacity = 0;
+    element.style.display = 'block';
+    
+    let start = null;
+    const step = (timestamp) => {
+        if (!start) start = timestamp;
+        const progress = (timestamp - start) / duration;
+        element.style.opacity = Math.min(progress, 1);
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+function slideIn(element, direction = 'up', duration = 400) {
+    const transform = {
+        up: 'translateY(30px)',
+        down: 'translateY(-30px)',
+        left: 'translateX(30px)',
+        right: 'translateX(-30px)'
+    };
+    
+    element.style.opacity = '0';
+    element.style.transform = transform[direction] || transform.up;
+    element.style.transition = `all ${duration}ms ease-out`;
+    
+    setTimeout(() => {
+        element.style.opacity = '1';
+        element.style.transform = 'translate(0, 0)';
+    }, 50);
+}
 
 // Функции для работы с API
 async function apiRequest(endpoint, options = {}) {
@@ -50,6 +102,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeAmountSelection();
     checkAuth();
     
+    // Анимация появления элементов
+    document.querySelectorAll('.screen.active .hero, .screen.active .form-container').forEach(el => {
+        slideIn(el, 'up');
+    });
+    
     if (!localStorage.getItem('visited')) {
         showNotification('Добро пожаловать в РНЛ ЕДА! Используйте промокод WELCOME10 для скидки 10%', 'success');
         localStorage.setItem('visited', 'true');
@@ -58,45 +115,92 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Функции навигации
 function goTo(screenId) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(screenId).classList.add("active");
-    
-    if (screenId === "start") {
-        document.getElementById("authors").style.display = "block";
-    } else {
-        document.getElementById("authors").style.display = "none";
+    // Анимация перехода
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+        currentScreen.style.opacity = '0';
+        currentScreen.style.transform = 'translateY(20px)';
+        currentScreen.style.transition = 'all 0.3s ease';
     }
     
-    switch(screenId) {
-        case 'profile':
-            updateProfile();
-            break;
-        case 'assortment':
-            updateCartSummary();
-            break;
-        case 'Thx':
-            startCountdown();
-            break;
-        case 'payment':
-            updatePaymentUI();
-            break;
-    }
+    setTimeout(() => {
+        document.querySelectorAll(".screen").forEach(s => {
+            s.classList.remove("active");
+            s.style.opacity = '0';
+            s.style.transform = 'translateY(20px)';
+        });
+        
+        const targetScreen = document.getElementById(screenId);
+        targetScreen.classList.add("active");
+        
+        setTimeout(() => {
+            targetScreen.style.opacity = '1';
+            targetScreen.style.transform = 'translateY(0)';
+            
+            // Анимация появления контента
+            const content = targetScreen.querySelector('.hero, .form-container, .page-header, .profile-header, .success-container');
+            if (content) {
+                slideIn(content, 'up');
+            }
+        }, 50);
+        
+        if (screenId === "start") {
+            document.getElementById("authors").style.display = "block";
+        } else {
+            document.getElementById("authors").style.display = "none";
+        }
+        
+        switch(screenId) {
+            case 'profile':
+                updateProfile();
+                break;
+            case 'assortment':
+                updateCartSummary();
+                break;
+            case 'Thx':
+                startCountdown();
+                break;
+            case 'payment':
+                updatePaymentUI();
+                break;
+            case 'admin':
+                if (currentUser && currentUser.role === 'admin') {
+                    loadAdminStats();
+                    loadAdminOrders();
+                } else {
+                    goTo('profile');
+                }
+                break;
+            case 'order-history':
+                loadFullOrderHistory();
+                break;
+        }
+    }, 300);
 }
 
 // Проверка авторизации
 function checkAuth() {
     const savedUser = localStorage.getItem('currentUser');
     const logoutBtn = document.getElementById('logout-btn');
+    const adminBtn = document.getElementById('admin-btn');
     
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
         logoutBtn.style.display = 'flex';
+        
+        // Показываем кнопку админа если пользователь админ
+        if (currentUser.role === 'admin') {
+            adminBtn.style.display = 'flex';
+        } else {
+            adminBtn.style.display = 'none';
+        }
         
         if (window.location.hash !== '#start') {
             goTo('profile');
         }
     } else {
         logoutBtn.style.display = 'none';
+        adminBtn.style.display = 'none';
     }
 }
 
@@ -124,6 +228,10 @@ async function login() {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
         document.getElementById('logout-btn').style.display = 'flex';
+        if (currentUser.role === 'admin') {
+            document.getElementById('admin-btn').style.display = 'flex';
+        }
+        
         showNotification(`Добро пожаловать, ${username}!`, 'success');
         goTo('profile');
         
@@ -202,6 +310,7 @@ function logout() {
     localStorage.removeItem('token');
     sessionStorage.removeItem('currentUser');
     document.getElementById('logout-btn').style.display = 'none';
+    document.getElementById('admin-btn').style.display = 'none';
     
     cart = {};
     updateCart();
@@ -277,7 +386,17 @@ function updateProfile() {
     else if (hour < 18) greeting = 'ДОБРЫЙ ДЕНЬ';
     
     document.getElementById('welcome').textContent = `${greeting}, ${currentUser.username.toUpperCase()}`;
-    document.getElementById('balance').textContent = `${(currentUser.balance || 0).toFixed(2)} ₴`;
+    
+    // Анимация изменения баланса
+    const balanceElement = document.getElementById('balance');
+    const currentBalance = parseFloat(balanceElement.textContent) || 0;
+    const newBalance = (currentUser.balance || 0).toFixed(2);
+    
+    if (currentBalance !== parseFloat(newBalance)) {
+        animateValue(balanceElement, currentBalance, parseFloat(newBalance), 1000);
+    } else {
+        balanceElement.textContent = `${newBalance} ₴`;
+    }
     
     // Заполняем все поля личных данных
     document.getElementById('profile-name').textContent = currentUser.full_name || '-';
@@ -339,7 +458,6 @@ async function saveProfile() {
             body: {
                 full_name: name,
                 class_name: grade
-                // age и parents могут храниться в дополнительных полях
             }
         });
         
@@ -355,37 +473,27 @@ async function saveProfile() {
     }
 }
 
+// Улучшенная история заказов
 async function loadOrderHistory() {
     if (!currentUser) return;
     
     try {
-        const data = await apiRequest('/api/orders/history');
+        const data = await apiRequest('/api/orders/history?limit=5');
         
         const historyContainer = document.getElementById('order-history-list');
         historyContainer.innerHTML = '';
         
-        if (!data || data.length === 0) {
+        if (!data.orders || data.orders.length === 0) {
             historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
             return;
         }
         
-        data.forEach(order => {
-            const orderElement = document.createElement('div');
-            orderElement.className = 'order-item';
-            
-            // Формируем список товаров
-            const itemsText = order.items ? order.items.map(item => 
-                `${item.name} x${item.quantity}`
-            ).join(', ') : 'Заказ';
-            
-            orderElement.innerHTML = `
-                <div class="order-info">
-                    <span class="order-name">${itemsText}</span>
-                    <span class="order-date">${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
-                </div>
-                <span class="order-price">${order.final_amount} ₴</span>
-            `;
-            historyContainer.appendChild(orderElement);
+        data.orders.forEach((order, index) => {
+            setTimeout(() => {
+                const orderElement = createOrderElement(order);
+                historyContainer.appendChild(orderElement);
+                slideIn(orderElement, 'up');
+            }, index * 100);
         });
         
     } catch (error) {
@@ -394,8 +502,250 @@ async function loadOrderHistory() {
     }
 }
 
+async function loadFullOrderHistory() {
+    if (!currentUser) return;
+    
+    try {
+        const offset = (currentOrderPage - 1) * ordersPerPage;
+        const data = await apiRequest(`/api/orders/history?limit=${ordersPerPage}&offset=${offset}`);
+        
+        const historyContainer = document.getElementById('full-order-history-list');
+        const paginationContainer = document.getElementById('order-history-pagination');
+        
+        historyContainer.innerHTML = '';
+        
+        if (!data.orders || data.orders.length === 0) {
+            historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
+            paginationContainer.innerHTML = '';
+            return;
+        }
+        
+        data.orders.forEach((order, index) => {
+            setTimeout(() => {
+                const orderElement = createDetailedOrderElement(order);
+                historyContainer.appendChild(orderElement);
+                slideIn(orderElement, 'up');
+            }, index * 100);
+        });
+        
+        // Пагинация
+        updatePagination(paginationContainer, data.total, ordersPerPage, currentOrderPage);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки полной истории:', error);
+        showNotification('Ошибка загрузки истории заказов', 'error');
+    }
+}
+
+function createOrderElement(order) {
+    const orderElement = document.createElement('div');
+    orderElement.className = 'order-item';
+    orderElement.setAttribute('data-order-id', order.id);
+    
+    const itemsText = order.items ? order.items.map(item => 
+        `${item.name} x${item.quantity}`
+    ).join(', ') : 'Заказ';
+    
+    const orderDate = new Date(order.created_at);
+    const statusClass = getStatusClass(order.status);
+    
+    orderElement.innerHTML = `
+        <div class="order-info">
+            <span class="order-name">${itemsText}</span>
+            <span class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+        </div>
+        <div class="order-meta">
+            <span class="order-status ${statusClass}">${getStatusText(order.status)}</span>
+            <span class="order-price">${order.final_amount} ₴</span>
+        </div>
+    `;
+    
+    orderElement.addEventListener('click', () => showOrderDetails(order.id));
+    return orderElement;
+}
+
+function createDetailedOrderElement(order) {
+    const orderElement = document.createElement('div');
+    orderElement.className = 'detailed-order-item';
+    orderElement.setAttribute('data-order-id', order.id);
+    
+    const orderDate = new Date(order.created_at);
+    const statusClass = getStatusClass(order.status);
+    
+    let itemsHtml = '';
+    if (order.items) {
+        itemsHtml = order.items.map(item => `
+            <div class="order-item-detail">
+                <span>${item.name}</span>
+                <span>x${item.quantity}</span>
+                <span>${item.total_price} ₴</span>
+            </div>
+        `).join('');
+    }
+    
+    orderElement.innerHTML = `
+        <div class="order-header">
+            <div class="order-id">Заказ #${order.id.slice(-8)}</div>
+            <div class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+        <div class="order-body">
+            <div class="order-items">
+                ${itemsHtml}
+            </div>
+            <div class="order-summary">
+                <div class="order-total">
+                    <span>Итого:</span>
+                    <span>${order.final_amount} ₴</span>
+                </div>
+                <div class="order-status ${statusClass}">${getStatusText(order.status)}</div>
+            </div>
+        </div>
+    `;
+    
+    orderElement.addEventListener('click', () => showOrderDetails(order.id));
+    return orderElement;
+}
+
+function getStatusClass(status) {
+    const statusClasses = {
+        'pending': 'status-pending',
+        'confirmed': 'status-confirmed',
+        'preparing': 'status-preparing',
+        'ready': 'status-ready',
+        'completed': 'status-completed',
+        'cancelled': 'status-cancelled'
+    };
+    return statusClasses[status] || 'status-pending';
+}
+
+function getStatusText(status) {
+    const statusTexts = {
+        'pending': 'Ожидание',
+        'confirmed': 'Подтвержден',
+        'preparing': 'Готовится',
+        'ready': 'Готов',
+        'completed': 'Завершен',
+        'cancelled': 'Отменен'
+    };
+    return statusTexts[status] || status;
+}
+
+function updatePagination(container, total, perPage, currentPage) {
+    const totalPages = Math.ceil(total / perPage);
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let paginationHtml = '';
+    
+    if (currentPage > 1) {
+        paginationHtml += `<button class="pagination-btn" onclick="changeOrderPage(${currentPage - 1})">‹</button>`;
+    }
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            paginationHtml += `<button class="pagination-btn active">${i}</button>`;
+        } else {
+            paginationHtml += `<button class="pagination-btn" onclick="changeOrderPage(${i})">${i}</button>`;
+        }
+    }
+    
+    if (currentPage < totalPages) {
+        paginationHtml += `<button class="pagination-btn" onclick="changeOrderPage(${currentPage + 1})">›</button>`;
+    }
+    
+    container.innerHTML = paginationHtml;
+}
+
+function changeOrderPage(page) {
+    currentOrderPage = page;
+    loadFullOrderHistory();
+}
+
+async function showOrderDetails(orderId) {
+    try {
+        const order = await apiRequest(`/api/orders/${orderId}`);
+        openOrderDetailsModal(order);
+    } catch (error) {
+        console.error('Ошибка загрузки деталей заказа:', error);
+        showNotification('Ошибка загрузки деталей заказа', 'error');
+    }
+}
+
+function openOrderDetailsModal(order) {
+    const modal = document.getElementById('order-details-modal');
+    const orderDate = new Date(order.created_at);
+    
+    let itemsHtml = '';
+    if (order.items) {
+        itemsHtml = order.items.map(item => `
+            <div class="order-detail-item">
+                <span>${item.name}</span>
+                <span>x${item.quantity}</span>
+                <span>${item.total_price} ₴</span>
+            </div>
+        `).join('');
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Детали заказа #${order.id.slice(-8)}</h3>
+                <button class="modal-close" onclick="closeModal('order-details-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="order-info-section">
+                    <div class="info-row">
+                        <span>Дата заказа:</span>
+                        <span>${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Статус:</span>
+                        <span class="order-status ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
+                    </div>
+                    ${order.promocode ? `
+                    <div class="info-row">
+                        <span>Промокод:</span>
+                        <span>${order.promocode}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="order-items-section">
+                    <h4>Состав заказа:</h4>
+                    ${itemsHtml}
+                </div>
+                
+                <div class="order-summary-section">
+                    <div class="summary-row">
+                        <span>Сумма заказа:</span>
+                        <span>${order.total_amount} ₴</span>
+                    </div>
+                    ${order.discount_amount > 0 ? `
+                    <div class="summary-row discount">
+                        <span>Скидка:</span>
+                        <span>-${order.discount_amount} ₴</span>
+                    </div>
+                    ` : ''}
+                    <div class="summary-row total">
+                        <span>Итого к оплате:</span>
+                        <span>${order.final_amount} ₴</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    openModal('order-details-modal');
+}
+
 function showFullOrderHistory() {
-    showNotification('Полная история заказов будет доступна в следующем обновлении', 'info');
+    currentOrderPage = 1;
+    goTo('order-history');
 }
 
 // Функции для работы с ассортиментом
@@ -405,33 +755,37 @@ function initializeAssortment() {
     
     container.innerHTML = '';
     
-    products.forEach(product => {
-        const quantity = cart[product.id] || 0;
-        const itemCard = document.createElement('div');
-        itemCard.className = 'item-card';
-        itemCard.setAttribute('data-category', product.category);
-        itemCard.innerHTML = `
-            <div class="item-image">
-                <i class="${product.icon}"></i>
-            </div>
-            <div class="item-name">${product.name}</div>
-            <div class="item-price">${product.price} ₴</div>
-            <div class="item-actions">
-                <div class="quantity-controls">
-                    <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <span class="quantity" id="quantity-${product.id}">${quantity}</span>
-                    <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
-                        <i class="fas fa-plus"></i>
+    products.forEach((product, index) => {
+        setTimeout(() => {
+            const quantity = cart[product.id] || 0;
+            const itemCard = document.createElement('div');
+            itemCard.className = 'item-card';
+            itemCard.setAttribute('data-category', product.category);
+            itemCard.innerHTML = `
+                <div class="item-image">
+                    <i class="${product.icon}"></i>
+                </div>
+                <div class="item-name">${product.name}</div>
+                <div class="item-description">${product.description || ''}</div>
+                <div class="item-price">${product.price} ₴</div>
+                <div class="item-actions">
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="quantity" id="quantity-${product.id}">${quantity}</span>
+                        <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
+                        <i class="fas fa-cart-plus"></i>
                     </button>
                 </div>
-                <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
-                    <i class="fas fa-cart-plus"></i>
-                </button>
-            </div>
-        `;
-        container.appendChild(itemCard);
+            `;
+            container.appendChild(itemCard);
+            slideIn(itemCard, 'up');
+        }, index * 100);
     });
     
     document.getElementById('search-input').addEventListener('input', filterProducts);
@@ -452,14 +806,21 @@ function filterProducts() {
     const container = document.getElementById('items-container');
     const allItems = container.querySelectorAll('.item-card');
     
-    allItems.forEach(item => {
+    allItems.forEach((item, index) => {
         const itemName = item.querySelector('.item-name').textContent.toLowerCase();
         const itemCategory = item.getAttribute('data-category');
         
         const matchesSearch = itemName.includes(searchTerm);
         const matchesCategory = activeCategory === 'all' || itemCategory === activeCategory;
         
-        item.style.display = matchesSearch && matchesCategory ? 'block' : 'none';
+        if (matchesSearch && matchesCategory) {
+            item.style.display = 'block';
+            setTimeout(() => {
+                slideIn(item, 'up');
+            }, index * 50);
+        } else {
+            item.style.display = 'none';
+        }
     });
 }
 
@@ -477,7 +838,12 @@ function addToCart(productId) {
     cart[productId]++;
     
     updateCart();
-    showNotification('Товар добавлен в корзину', 'success');
+    
+    // Анимация добавления в корзину
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        showNotification(`"${product.name}" добавлен в корзину`, 'success');
+    }
 }
 
 function increaseQuantity(productId) {
@@ -486,6 +852,13 @@ function increaseQuantity(productId) {
     }
     cart[productId]++;
     updateCart();
+    
+    // Анимация
+    const quantityElement = document.getElementById(`quantity-${productId}`);
+    quantityElement.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+        quantityElement.style.transform = 'scale(1)';
+    }, 200);
 }
 
 function decreaseQuantity(productId) {
@@ -500,7 +873,17 @@ function decreaseQuantity(productId) {
 
 function updateCart() {
     const totalItems = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-    document.getElementById('cart-count').textContent = totalItems;
+    const cartCount = document.getElementById('cart-count');
+    
+    // Анимация изменения количества
+    if (parseInt(cartCount.textContent) !== totalItems) {
+        cartCount.style.transform = 'scale(1.3)';
+        setTimeout(() => {
+            cartCount.style.transform = 'scale(1)';
+        }, 300);
+    }
+    
+    cartCount.textContent = totalItems;
     
     products.forEach(product => {
         const quantityElement = document.getElementById(`quantity-${product.id}`);
@@ -544,7 +927,7 @@ function updateCartSummary() {
     cartItems.innerHTML = '';
     let total = 0;
     
-    for (const productId in cart) {
+    Object.keys(cart).forEach((productId, index) => {
         const product = products.find(p => p.id == productId);
         if (product && cart[productId] > 0) {
             const itemTotal = product.price * cart[productId];
@@ -565,19 +948,24 @@ function updateCartSummary() {
                 </div>
             `;
             cartItems.appendChild(cartItem);
+            
+            setTimeout(() => {
+                slideIn(cartItem, 'right');
+            }, index * 50);
         }
-    }
+    });
     
     promoDiscount = activePromo ? (total * (activePromo.discount_percentage || activePromo.discount_percent) / 100) : 0;
     const finalAmount = total - promoDiscount;
     
-    cartTotal.textContent = `${total.toFixed(2)} ₴`;
+    // Анимация изменения сумм
+    animateValue(cartTotal, parseFloat(cartTotal.textContent) || 0, total, 500);
     
     if (activePromo) {
         cartDiscount.style.display = 'flex';
-        discountAmount.textContent = `-${promoDiscount.toFixed(2)} ₴`;
+        animateValue(discountAmount, parseFloat(discountAmount.textContent) || 0, promoDiscount, 500);
         cartFinal.style.display = 'flex';
-        finalTotal.textContent = `${finalAmount.toFixed(2)} ₴`;
+        animateValue(finalTotal, parseFloat(finalTotal.textContent) || 0, finalAmount, 500);
     } else {
         cartDiscount.style.display = 'none';
         cartFinal.style.display = 'none';
@@ -585,9 +973,13 @@ function updateCartSummary() {
 }
 
 function removeFromCart(productId) {
+    const product = products.find(p => p.id === productId);
     delete cart[productId];
     updateCart();
-    showNotification('Товар удален из корзины', 'success');
+    
+    if (product) {
+        showNotification(`"${product.name}" удален из корзины`, 'info');
+    }
 }
 
 function clearCart() {
@@ -595,7 +987,7 @@ function clearCart() {
     activePromo = null;
     promoDiscount = 0;
     updateCart();
-    showNotification('Корзина очищена', 'success');
+    showNotification('Корзина очищена', 'info');
 }
 
 async function applyPromo() {
@@ -626,6 +1018,14 @@ async function applyPromo() {
         const discountPercent = activePromo.discount_percentage || activePromo.discount_percent;
         promoMessage.textContent = `Промокод применен! Скидка ${discountPercent}%`;
         promoMessage.className = 'promo-message success';
+        
+        // Анимация успешного применения
+        const promoInput = document.querySelector('.promo-input');
+        promoInput.style.borderColor = '#00b377';
+        setTimeout(() => {
+            promoInput.style.borderColor = '';
+        }, 2000);
+        
         showNotification(`Промокод "${promoCode}" применен! Скидка ${discountPercent}%`, 'success');
         
     } catch (error) {
@@ -647,15 +1047,18 @@ async function showPromoModal() {
             { code: 'SUMMER20', discount_percentage: 20, expires_at: '2025-08-31' }
         ];
         
-        promoCodes.forEach(promo => {
-            const promoItem = document.createElement('div');
-            promoItem.className = 'promo-item';
-            promoItem.innerHTML = `
-                <div class="promo-code">${promo.code}</div>
-                <div class="promo-discount">Скидка ${promo.discount_percentage}%</div>
-                <div class="promo-expires">Действует до: ${new Date(promo.expires_at).toLocaleDateString('ru-RU')}</div>
-            `;
-            promoList.appendChild(promoItem);
+        promoCodes.forEach((promo, index) => {
+            setTimeout(() => {
+                const promoItem = document.createElement('div');
+                promoItem.className = 'promo-item';
+                promoItem.innerHTML = `
+                    <div class="promo-code">${promo.code}</div>
+                    <div class="promo-discount">Скидка ${promo.discount_percentage}%</div>
+                    <div class="promo-expires">Действует до: ${new Date(promo.expires_at).toLocaleDateString('ru-RU')}</div>
+                `;
+                promoList.appendChild(promoItem);
+                slideIn(promoItem, 'up');
+            }, index * 100);
         });
         
         openModal('promo-modal');
@@ -728,42 +1131,53 @@ async function placeOrder() {
         const orderDetailsList = document.getElementById('order-details-list');
         orderDetailsList.innerHTML = '';
         
-        orderItems.forEach(item => {
-            const product = products.find(p => p.id == item.meal_id);
-            if (product) {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'order-detail-item';
-                itemElement.innerHTML = `
-                    <span>${product.name} x${item.quantity}</span>
-                    <span>${item.total_price} ₴</span>
-                `;
-                orderDetailsList.appendChild(itemElement);
-            }
+        orderItems.forEach((item, index) => {
+            setTimeout(() => {
+                const product = products.find(p => p.id == item.meal_id);
+                if (product) {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'order-detail-item';
+                    itemElement.innerHTML = `
+                        <span>${product.name} x${item.quantity}</span>
+                        <span>${item.total_price} ₴</span>
+                    `;
+                    orderDetailsList.appendChild(itemElement);
+                    slideIn(itemElement, 'up');
+                }
+            }, index * 100);
         });
         
         if (activePromo) {
-            const discountElement = document.createElement('div');
-            discountElement.className = 'order-detail-item';
-            discountElement.innerHTML = `
-                <span>Скидка по промокоду ${activePromo.code}</span>
-                <span>-${promoDiscount} ₴</span>
-            `;
-            orderDetailsList.appendChild(discountElement);
+            setTimeout(() => {
+                const discountElement = document.createElement('div');
+                discountElement.className = 'order-detail-item';
+                discountElement.innerHTML = `
+                    <span>Скидка по промокоду ${activePromo.code}</span>
+                    <span>-${promoDiscount} ₴</span>
+                `;
+                orderDetailsList.appendChild(discountElement);
+                slideIn(discountElement, 'up');
+            }, orderItems.length * 100);
         }
         
-        const totalElement = document.createElement('div');
-        totalElement.className = 'order-detail-total';
-        totalElement.innerHTML = `
-            <span>Итого:</span>
-            <span>${finalAmount} ₴</span>
-        `;
-        orderDetailsList.appendChild(totalElement);
+        setTimeout(() => {
+            const totalElement = document.createElement('div');
+            totalElement.className = 'order-detail-total';
+            totalElement.innerHTML = `
+                <span>Итого:</span>
+                <span>${finalAmount} ₴</span>
+            `;
+            orderDetailsList.appendChild(totalElement);
+            slideIn(totalElement, 'up');
+        }, (orderItems.length + 1) * 100);
         
         // Очищаем корзину
         clearCart();
         
         // Переходим на экран благодарности
-        goTo('Thx');
+        setTimeout(() => {
+            goTo('Thx');
+        }, 500);
         
     } catch (error) {
         console.error('Ошибка оформления заказа:', error);
@@ -777,8 +1191,12 @@ async function placeOrder() {
 function initializeAmountSelection() {
     document.querySelectorAll('.amount-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.amount-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.transform = 'scale(1)';
+            });
             this.classList.add('active');
+            this.style.transform = 'scale(1.05)';
             selectedAmount = parseInt(this.getAttribute('data-amount'));
             document.getElementById('custom-amount').value = '';
         });
@@ -786,14 +1204,20 @@ function initializeAmountSelection() {
     
     document.getElementById('custom-amount').addEventListener('input', function() {
         if (this.value) {
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.amount-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.transform = 'scale(1)';
+            });
             selectedAmount = parseInt(this.value) || 0;
         }
     });
 }
 
 function updatePaymentUI() {
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.amount-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.transform = 'scale(1)';
+    });
     document.getElementById('custom-amount').value = '';
     selectedAmount = 100;
 }
@@ -851,6 +1275,14 @@ async function processPayment(method) {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
         showNotification(`Баланс успешно пополнен на ${finalAmount.toFixed(2)} ₴`, 'success');
+        
+        // Анимация успешного пополнения
+        const balanceElement = document.getElementById('balance');
+        balanceElement.style.color = '#00b377';
+        setTimeout(() => {
+            balanceElement.style.color = '';
+        }, 1000);
+        
         goTo('profile');
         
     } catch (error) {
@@ -866,6 +1298,15 @@ function copyToClipboard(elementId) {
     const text = element.textContent;
     
     navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target.closest('.btn-copy');
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.backgroundColor = '#00b377';
+        
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+            btn.style.backgroundColor = '';
+        }, 2000);
+        
         showNotification('Скопировано в буфер обмена', 'success');
     }).catch(err => {
         console.error('Ошибка копирования: ', err);
@@ -873,17 +1314,153 @@ function copyToClipboard(elementId) {
     });
 }
 
+// АДМИН ФУНКЦИИ
+async function loadAdminStats() {
+    try {
+        const data = await apiRequest('/api/admin/stats');
+        
+        // Анимация чисел
+        animateValue(document.getElementById('admin-total-users'), 0, data.users, 1000);
+        animateValue(document.getElementById('admin-total-orders'), 0, data.total_orders, 1000);
+        animateValue(document.getElementById('admin-today-orders'), 0, data.today_orders, 1000);
+        
+        document.getElementById('admin-total-revenue').textContent = data.total_revenue.toFixed(2);
+        document.getElementById('admin-today-revenue').textContent = data.today_revenue.toFixed(2);
+        
+        // Популярные блюда
+        const popularMealsList = document.getElementById('admin-popular-meals');
+        popularMealsList.innerHTML = '';
+        
+        data.popular_meals.forEach((meal, index) => {
+            setTimeout(() => {
+                const mealItem = document.createElement('div');
+                mealItem.className = 'popular-meal-item';
+                mealItem.innerHTML = `
+                    <span class="meal-name">${meal.name}</span>
+                    <span class="meal-orders">${meal.order_count} заказов</span>
+                `;
+                popularMealsList.appendChild(mealItem);
+                slideIn(mealItem, 'up');
+            }, index * 100);
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+        showNotification('Ошибка загрузки статистики', 'error');
+    }
+}
+
+async function loadAdminOrders() {
+    try {
+        const data = await apiRequest('/api/admin/orders');
+        
+        const ordersContainer = document.getElementById('admin-orders-list');
+        ordersContainer.innerHTML = '';
+        
+        if (data.length === 0) {
+            ordersContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
+            return;
+        }
+        
+        data.forEach((order, index) => {
+            setTimeout(() => {
+                const orderElement = createAdminOrderElement(order);
+                ordersContainer.appendChild(orderElement);
+                slideIn(orderElement, 'up');
+            }, index * 100);
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки заказов:', error);
+        showNotification('Ошибка загрузки заказов', 'error');
+    }
+}
+
+function createAdminOrderElement(order) {
+    const orderElement = document.createElement('div');
+    orderElement.className = 'admin-order-item';
+    orderElement.innerHTML = `
+        <div class="admin-order-header">
+            <div class="order-user">
+                <strong>${order.full_name}</strong>
+                <span>${order.class_name} • ${order.username}</span>
+            </div>
+            <div class="order-amount">${order.final_amount} ₴</div>
+        </div>
+        <div class="admin-order-body">
+            <div class="order-meta">
+                <span class="order-id">#${order.id.slice(-8)}</span>
+                <span class="order-date">${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
+                <select class="status-select" onchange="updateOrderStatus('${order.id}', this.value)">
+                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Ожидание</option>
+                    <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Подтвержден</option>
+                    <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Готовится</option>
+                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Готов</option>
+                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Завершен</option>
+                    <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Отменен</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    return orderElement;
+}
+
+async function updateOrderStatus(orderId, status) {
+    try {
+        await apiRequest(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            body: { status }
+        });
+        
+        showNotification('Статус заказа обновлен', 'success');
+        
+        // Анимация обновления
+        const select = event.target;
+        select.style.backgroundColor = '#00b377';
+        select.style.color = 'white';
+        setTimeout(() => {
+            select.style.backgroundColor = '';
+            select.style.color = '';
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Ошибка обновления статуса:', error);
+        showNotification('Ошибка обновления статуса', 'error');
+        event.target.value = event.target.getAttribute('data-previous-value');
+    }
+}
+
 // Вспомогательные функции
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     const notificationText = document.getElementById('notification-text');
+    const icon = notification.querySelector('i');
+    
+    // Устанавливаем иконку в зависимости от типа
+    icon.className = {
+        'success': 'fas fa-check-circle',
+        'error': 'fas fa-exclamation-circle',
+        'warning': 'fas fa-exclamation-triangle',
+        'info': 'fas fa-info-circle'
+    }[type] || 'fas fa-info-circle';
     
     notificationText.textContent = message;
     notification.className = `notification ${type}`;
+    
+    // Анимация появления
+    notification.style.transform = 'translateX(100%)';
     notification.classList.add('active');
     
     setTimeout(() => {
-        notification.classList.remove('active');
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            notification.classList.remove('active');
+        }, 300);
     }, 4000);
 }
 
@@ -894,6 +1471,12 @@ function startCountdown() {
     const countdown = setInterval(() => {
         timeLeft--;
         countdownElement.textContent = timeLeft;
+        
+        // Анимация изменения числа
+        countdownElement.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            countdownElement.style.transform = 'scale(1)';
+        }, 300);
         
         if (timeLeft <= 0) {
             clearInterval(countdown);
@@ -913,24 +1496,44 @@ function showLoading(show) {
 
 // Функции для работы с модальными окнами
 function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
+    const modal = document.getElementById(modalId);
+    modal.classList.add('active');
+    
+    // Анимация появления
+    const content = modal.querySelector('.modal-content');
+    content.style.transform = 'scale(0.8)';
+    content.style.opacity = '0';
+    
+    setTimeout(() => {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+    }, 10);
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const modal = document.getElementById(modalId);
+    const content = modal.querySelector('.modal-content');
+    
+    content.style.transform = 'scale(0.8)';
+    content.style.opacity = '0';
+    
+    setTimeout(() => {
+        modal.classList.remove('active');
+        content.style.transform = '';
+        content.style.opacity = '';
+    }, 300);
 }
 
 document.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
-        event.target.classList.remove('active');
+        closeModal(event.target.id);
     }
 });
 
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         document.querySelectorAll('.modal.active').forEach(modal => {
-            modal.classList.remove('active');
+            closeModal(modal.id);
         });
     }
 });
-
