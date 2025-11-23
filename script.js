@@ -1,9 +1,5 @@
-// Конфигурация Supabase (ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ)
-const SUPABASE_URL = 'https://jagcbntktjmrqgzocvuz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZ2NibnRrdGptcnFnem9jdnV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NjIxMDUsImV4cCI6MjA3NDQzODEwNX0.7W-EtJ3UqAD-vNHUonJ5tD5fwrWdoVVOBV3y3h5AK64';
-
-// Инициализация Supabase клиента
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Конфигурация API
+const API_BASE_URL = window.location.origin;
 
 // Основные переменные
 let currentUser = null;
@@ -12,6 +8,37 @@ let activePromo = null;
 let promoDiscount = 0;
 let selectedAmount = 100;
 let products = [];
+
+// Функции для работы с API
+async function apiRequest(endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers
+        },
+        ...options
+    };
+
+    if (config.body && typeof config.body === 'object') {
+        config.body = JSON.stringify(config.body);
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка сервера');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`API Error (${endpoint}):`, error);
+        throw error;
+    }
+}
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
@@ -951,4 +978,5 @@ document.addEventListener('keydown', function(event) {
             modal.classList.remove('active');
         });
     }
+
 });
