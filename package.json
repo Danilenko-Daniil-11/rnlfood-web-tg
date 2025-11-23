@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
+    "bot": "node bot.js",
+    "dev": "node --watch server.js",
+    "dev-bot": "node --watch bot.js",
     "build": "npm install"
   },
   "dependencies": {
@@ -15,18 +17,10 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.16.3"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
-  {
-  "type": "module",
-  "scripts": {
-    "start": "node server.js",
-    "bot": "node bot.js",
-    "dev": "node --watch server.js",
-    "dev-bot": "node --watch bot.js"
-  }
   }
 }
