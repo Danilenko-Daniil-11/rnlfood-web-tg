@@ -167,11 +167,19 @@ async function register() {
                 username,
                 password,
                 full_name: fullname,
-                class_name: grade
+                class_name: grade,
+                age: age,
+                parents: parents
             }
         });
         
-        currentUser = data.user;
+        // Сохраняем все данные пользователя
+        currentUser = {
+            ...data.user,
+            age: age,
+            parents: parents
+        };
+        
         localStorage.setItem('token', data.token);
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         document.getElementById('logout-btn').style.display = 'flex';
@@ -270,13 +278,34 @@ function updateProfile() {
     
     document.getElementById('welcome').textContent = `${greeting}, ${currentUser.username.toUpperCase()}`;
     document.getElementById('balance').textContent = `${(currentUser.balance || 0).toFixed(2)} ₴`;
+    
+    // Заполняем все поля личных данных
     document.getElementById('profile-name').textContent = currentUser.full_name || '-';
+    document.getElementById('profile-age').textContent = currentUser.age || calculateAgeFromClass(currentUser.class_name) || '-';
+    document.getElementById('profile-parents').textContent = currentUser.parents || 'Не указано';
+    document.getElementById('profile-grade').textContent = currentUser.class_name || '-';
+}
+
+// Вспомогательная функция для расчета возраста по классу
+function calculateAgeFromClass(className) {
+    if (!className) return null;
+    
+    // Примерная логика: 5 класс = 10-11 лет, 6 класс = 11-12 и т.д.
+    const classNumber = parseInt(className.split('-')[0]);
+    if (classNumber >= 5 && classNumber <= 11) {
+        return (classNumber + 5) + ' лет';
+    }
+    return null;
 }
 
 function editProfile() {
     if (!currentUser) return;
     
     document.getElementById('edit-name').value = currentUser.full_name || '';
+    document.getElementById('edit-age').value = currentUser.age || '';
+    document.getElementById('edit-parents').value = currentUser.parents || '';
+    document.getElementById('edit-grade').value = currentUser.class_name || '';
+    
     openModal('edit-profile-modal');
 }
 
@@ -284,8 +313,11 @@ async function saveProfile() {
     if (!currentUser) return;
     
     const name = document.getElementById('edit-name').value;
+    const age = document.getElementById('edit-age').value;
+    const parents = document.getElementById('edit-parents').value;
+    const grade = document.getElementById('edit-grade').value;
     
-    if (!name) {
+    if (!name || !age || !parents || !grade) {
         showNotification('Пожалуйста, заполните все поля', 'error');
         return;
     }
@@ -295,7 +327,21 @@ async function saveProfile() {
     try {
         // Обновляем данные пользователя локально
         currentUser.full_name = name;
+        currentUser.age = age;
+        currentUser.parents = parents;
+        currentUser.class_name = grade;
+        
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
+        // Обновляем в базе данных
+        await apiRequest('/api/update-profile', {
+            method: 'POST',
+            body: {
+                full_name: name,
+                class_name: grade
+                // age и parents могут храниться в дополнительных полях
+            }
+        });
         
         updateProfile();
         closeModal('edit-profile-modal');
@@ -887,3 +933,4 @@ document.addEventListener('keydown', function(event) {
         });
     }
 });
+
