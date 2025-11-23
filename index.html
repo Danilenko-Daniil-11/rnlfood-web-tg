@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNL FOOD - Ришельевский лицей</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Добавляем Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300b377'/%3E%3Ctext x='50' y='60' font-family='Arial' font-size='30' fill='white' text-anchor='middle'%3ERNL%3C/text%3E%3C/svg%3E" alt="РНЛ ЕДА" class="logo">
+                    <div>
+                        <div class="logo-text">Ришельевский Научный Лицей</div>
+                        <div class="logo-subtext">Сервис питания</div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="promo-btn" onclick="showPromoModal()">
+                        <i class="fas fa-tag"></i>
+                        Промокод
+                    </div>
+                    <div class="cart-icon" onclick="goTo('assortment')">
+                        <i class="fas fa-shopping-basket"></i>
+                        <span id="cart-count" class="cart-count">0</span>
+                    </div>
+                    <div class="avatar" onclick="goTo('profile')">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <button class="logout-btn" id="logout-btn" onclick="logout()" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Выйти
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Start Screen -->
+            <section id="start" class="screen active">
+                <div class="hero">
+                    <h1 class="hero-title">
+                        ОФИЦИАЛЬНЫЙ САЙТ СЕРВИСА<br>
+                        ПО ПОКУПКЕ ПРОПИТАНИЯ ДЛЯ<br>
+                        <span class="highlight">РИШЕЛЬЕВСКОГО ЛИЦЕЯ</span>
+                    </h1>
+                    <div class="hero-subtitle">
+                        <p>Быстрый заказ еды без очередей</p>
+                    </div>
+                    <button class="btn-primary" onclick="goTo('login')">
+                        <span>ПРОДОЛЖИТЬ</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="authors" id="authors">
+                    <p>MADE BY:</p>
+                    <p>DANYLENKO DANIIL</p>
+                    <p>DMITRIEV KOLYA</p>
+                </div>
+            </section>
+
+            <!-- Login Screen -->
+            <section id="login" class="screen">
+                <div class="form-container">
+                    <h2>РЕГИСТРАЦИЯ / ВХОД</h2>
+                    <div class="input-group">
+                        <input type="text" id="username" placeholder=" " required>
+                        <label for="username">Логин</label>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder=" " required>
+                        <label for="password">Пароль</label>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="remember-me">
+                            <span class="checkmark"></span>
+                            Запомнить меня
+                        </label>
+                    </div>
+                    <button class="btn-primary" onclick="login()">
+                        <span>ВОЙТИ В СИСТЕМУ</span>
+                        <i class="fas fa-sign-in-alt"></i>
+                    </button>
+                    <div class="form-footer">
+                        <p>Нет аккаунта? <a href="#" onclick="showRegisterModal()">Зарегистрироваться</a></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile Screen -->
+            <section id="profile" class="screen">
+                <div class="profile-header">
+                    <h2 id="welcome">ДОБРЫЙ ВЕЧЕР, ПОЛЬЗОВАТЕЛЬ</h2>
+                    <div class="balance-card">
+                        <div class="balance-info">
+                            <h3>БАЛАНС</h3>
+                            <div class="balance-amount" id="balance">0.00 ₴</div>
+                        </div>
+                        <button class="btn-secondary" onclick="goTo('payment')">
+                            <i class="fas fa-plus"></i>
+                            ПОПОЛНИТЬ
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-grid">
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-circle"></i> ЛИЧНЫЕ ДАННЫЕ</h3>
+                            <button class="btn-edit" onclick="editProfile()">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-item">
+                                <span class="info-label">Имя и фамилия:</span>
+                                <span class="info-value" id="profile-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Возраст:</span>
+                                <span class="info-value" id="profile-age">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Родители:</span>
+                                <span class="info-value" id="profile-parents">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Класс:</span>
+                                <span class="info-value" id="profile-grade">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> ИСТОРИЯ ЗАКАЗОВ</h3>
+                            <button class="btn-more" onclick="showFullOrderHistory()">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div class="order-history" id="order-history-list">
+                                <div class="no-orders">Заказов пока нет</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-primary" onclick="goTo('assortment')">
+                        <span>ПЕРЕЙТИ В АССОРТИМЕНТ</span>
+                        <i class="fas fa-utensils"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Assortment Screen -->
+            <section id="assortment" class="screen">
+                <div class="page-header">
+                    <h2>АССОРТИМЕНТ</h2>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Поиск продуктов..." id="search-input">
+                    </div>
+                </div>
+
+                <div class="categories">
+                    <button class="category-btn active" data-category="all">Все</button>
+                    <button class="category-btn" data-category="Горячее">Горячее</button>
+                    <button class="category-btn" data-category="Напитки">Напитки</button>
+                    <button class="category-btn" data-category="Десерты">Десерты</button>
+                    <button class="category-btn" data-category="Салаты">Салаты</button>
+                </div>
+
+                <div class="items-grid" id="items-container">
+                    <!-- Items will be loaded by JavaScript -->
+                </div>
+
+                <div class="cart-summary" id="cart-summary">
+                    <div class="cart-header">
+                        <h3>Ваш заказ</h3>
+                        <button class="btn-clear" onclick="clearCart()">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="cart-items" id="cart-items">
+                        <!-- Cart items will be loaded by JavaScript -->
+                    </div>
+                    <div class="promo-section">
+                        <div class="promo-input">
+                            <input type="text" id="promo-code" placeholder="Промокод">
+                            <button class="btn-promo" onclick="applyPromo()">Применить</button>
+                        </div>
+                        <div id="promo-message" class="promo-message"></div>
+                    </div>
+                    <div class="cart-total">
+                        <span>Итого:</span>
+                        <span id="cart-total">0 ₴</span>
+                    </div>
+                    <div class="cart-discount" id="cart-discount" style="display: none;">
+                        <span>Скидка:</span>
+                        <span id="discount-amount">0 ₴</span>
+                    </div>
+                    <div class="cart-final" id="cart-final">
+                        <span>К оплате:</span>
+                        <span id="final-total">0 ₴</span>
+                    </div>
+                    <button class="btn-primary btn-order" onclick="placeOrder()">
+                        <span>ОФОРМИТЬ ЗАКАЗ</span>
+                        <i class="fas fa-shopping-basket"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Thank You Screen -->
+            <section id="Thx" class="screen">
+                <div class="success-container">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2>СПАСИБО ЗА ПОКУПКУ!</h2>
+                    <p>ВАШ ЗАКАЗ БУДЕТ ГОТОВ ЧЕРЕЗ <span class="countdown">20</span> МИНУТ В СТОЛОВОЙ</p>
+                    <div class="order-details">
+                        <h3>Детали заказа:</h3>
+                        <div id="order-details-list"></div>
+                    </div>
+                    <button class="btn-primary" onclick="goTo('assortment')">
+                        <span>ВЕРНУТЬСЯ В АССОРТИМЕНТ</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Payment Screen -->
+            <section id="payment" class="screen">
+                <div class="page-header">
+                    <h2>ПОПОЛНЕНИЕ СЧЕТА</h2>
+                    <button class="btn-back" onclick="goTo('profile')">
+                        <i class="fas fa-arrow-left"></i>
+                        Назад
+                    </button>
+                </div>
+
+                <div class="payment-amount">
+                    <h3>Выберите сумму пополнения</h3>
+                    <div class="amount-options">
+                        <button class="amount-btn" data-amount="50">50 ₴</button>
+                        <button class="amount-btn" data-amount="100">100 ₴</button>
+                        <button class="amount-btn" data-amount="200">200 ₴</button>
+                        <button class="amount-btn" data-amount="500">500 ₴</button>
+                    </div>
+                    <div class="custom-amount">
+                        <input type="number" id="custom-amount" placeholder="Другая сумма" min="10" max="1000">
+                        <span>₴</span>
+                    </div>
+                </div>
+
+                <div class="payment-methods">
+                    <div class="payment-method">
+                        <div class="method-icon">
+                            <i class="fab fa-bitcoin"></i>
+                        </div>
+                        <h3>CRYPTO</h3>
+                        <div class="method-info">
+                            <p>Скопировать адрес кошелька</p>
+                            <div class="wallet-address">
+                                <span id="crypto-address">1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</span>
+                                <button class="btn-copy" onclick="copyToClipboard('crypto-address')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="commission">Комиссия: 1%</div>
+                        <button class="btn-primary" onclick="processPayment('crypto')">
+                            ПОПОЛНИТЬ
+                        </button>
+                    </div>
+
+                    <div class="payment-method">
+                        <div class="method-icon">
+                            <i class="far fa-credit-card"></i>
+                        </div>
+                        <h3>БАНКОВСКАЯ КАРТА</h3>
+                        <div class="method-info">
+                            <p>Скопировать номер карты</p>
+                            <div class="wallet-address">
+                                <span id="card-number">5375 4141 0000 1234</span>
+                                <button class="btn-copy" onclick="copyToClipboard('card-number')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="commission">Комиссия: 2.5%</div>
+                        <button class="btn-primary" onclick="processPayment('card')">
+                            ПОПОЛНИТЬ
+                        </button>
+                    </div>
+
+                    <div class="payment-method">
+                        <div class="method-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3>НАЛИЧНЫЕ</h3>
+                        <div class="method-info">
+                            <p>Деньги нужно передать завучу, который находится в кабинете 215</p>
+                        </div>
+                        <div class="commission">Без комиссии</div>
+                        <button class="btn-primary" onclick="processPayment('cash')">
+                            ПОПОЛНИТЬ
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <i class="fas fa-check-circle"></i>
+            <span id="notification-text">Текст уведомления</span>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактирование профиля</h3>
+                <button class="modal-close" onclick="closeModal('edit-profile-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <input type="text" id="edit-name" placeholder=" " required>
+                    <label for="edit-name">Имя и фамилия</label>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="edit-age" placeholder=" " required min="10" max="18">
+                    <label for="edit-age">Возраст</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="edit-parents" placeholder=" " required>
+                    <label for="edit-parents">Родители</label>
+                </div>
+                <div class="input-group">
+                    <select id="edit-grade" required>
+                        <option value="">Выберите класс</option>
+                        <option value="5-А">5-А</option>
+                        <option value="5-Б">5-Б</option>
+                        <option value="5-В">5-В</option>
+                        <option value="5-Г">5-Г</option>
+                        <option value="6-А">6-А</option>
+                        <option value="6-Б">6-Б</option>
+                        <option value="6-В">6-В</option>
+                        <option value="6-Г">6-Г</option>
+                        <option value="7-А">7-А</option>
+                        <option value="7-Б">7-Б</option>
+                        <option value="7-В">7-В</option>
+                        <option value="7-Г">7-Г</option>
+                        <option value="8-А">8-А</option>
+                        <option value="8-Б">8-Б</option>
+                        <option value="8-В">8-В</option>
+                        <option value="8-Г">8-Г</option>
+                        <option value="9-А">9-А</option>
+                        <option value="9-Б">9-Б</option>
+                        <option value="9-В">9-В</option>
+                        <option value="9-Г">9-Г</option>
+                        <option value="10-А">10-А</option>
+                        <option value="10-Б">10-Б</option>
+                        <option value="10-В">10-В</option>
+                        <option value="10-Г">10-Г</option>
+                        <option value="11-А">11-А</option>
+                        <option value="11-Б">11-Б</option>
+                        <option value="11-В">11-В</option>
+                        <option value="11-Г">11-Г</option>
+                    </select>
+                    <label for="edit-grade">Класс</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('edit-profile-modal')">Отмена</button>
+                <button class="btn-primary" onclick="saveProfile()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Modal -->
+    <div id="promo-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Активные промокоды</h3>
+                <button class="modal-close" onclick="closeModal('promo-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="promo-list" id="promo-list">
+                    <!-- Promo codes will be loaded by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Регистрация</h3>
+                <button class="modal-close" onclick="closeModal('register-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <input type="text" id="reg-username" placeholder=" " required>
+                    <label for="reg-username">Логин</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-password" placeholder=" " required>
+                    <label for="reg-password">Пароль</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="reg-fullname" placeholder=" " required>
+                    <label for="reg-fullname">Имя и фамилия</label>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="reg-age" placeholder=" " required min="10" max="18">
+                    <label for="reg-age">Возраст</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="reg-parents" placeholder=" " required>
+                    <label for="reg-parents">Родители</label>
+                </div>
+                <div class="input-group">
+                    <select id="reg-grade" required>
+                        <option value="">Выберите класс</option>
+                        <option value="5-А">5-А</option>
+                        <option value="5-Б">5-Б</option>
+                        <option value="5-В">5-В</option>
+                        <option value="5-Г">5-Г</option>
+                        <option value="6-А">6-А</option>
+                        <option value="6-Б">6-Б</option>
+                        <option value="6-В">6-В</option>
+                        <option value="6-Г">6-Г</option>
+                        <option value="7-А">7-А</option>
+                        <option value="7-Б">7-Б</option>
+                        <option value="7-В">7-В</option>
+                        <option value="7-Г">7-Г</option>
+                        <option value="8-А">8-А</option>
+                        <option value="8-Б">8-Б</option>
+                        <option value="8-В">8-В</option>
+                        <option value="8-Г">8-Г</option>
+                        <option value="9-А">9-А</option>
+                        <option value="9-Б">9-Б</option>
+                        <option value="9-В">9-В</option>
+                        <option value="9-Г">9-Г</option>
+                        <option value="10-А">10-А</option>
+                        <option value="10-Б">10-Б</option>
+                        <option value="10-В">10-В</option>
+                        <option value="10-Г">10-Г</option>
+                        <option value="11-А">11-А</option>
+                        <option value="11-Б">11-Б</option>
+                        <option value="11-В">11-В</option>
+                        <option value="11-Г">11-Г</option>
+                    </select>
+                    <label for="reg-grade">Класс</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('register-modal')">Отмена</button>
+                <button class="btn-primary" onclick="register()">Зарегистрироваться</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Загрузка...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
