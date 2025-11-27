@@ -43,6 +43,46 @@
                     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
                         <i class="fas fa-moon"></i>
                     </button>
+                    <button class="theme-palette-btn btn-particle" onclick="showThemePalette()">
+                        <i class="fas fa-palette"></i>
+                    </button>
+                    <div id="theme-palette-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>🎨 Выбор цветовой темы</h3>
+                                <button class="modal-close btn-particle" onclick="closeModal('theme-palette-modal')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="theme-palette-grid" id="theme-palette-grid">
+                                    <!-- Темы будут загружены через JavaScript -->
+                                </div>
+
+                                <div class="custom-theme-section">
+                                    <h4>🎨 Своя цветовая схема</h4>
+                                    <div class="color-picker-group">
+                                        <div class="color-picker">
+                                            <label>Основной цвет:</label>
+                                            <input type="color" id="custom-primary" value="#00b377">
+                                        </div>
+                                        <div class="color-picker">
+                                            <label>Вторичный цвет:</label>
+                                            <input type="color" id="custom-secondary" value="#667eea">
+                                        </div>
+                                        <div class="color-picker">
+                                            <label>Акцентный цвет:</label>
+                                            <input type="color" id="custom-accent" value="#764ba2">
+                                        </div>
+                                     </div>
+                                     <button class="btn-primary btn-particle" onclick="applyCustomTheme()">
+                                         <i class="fas fa-magic"></i>
+                                         Применить свою тему
+                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Режим для родителей -->
                     <button class="parent-mode-btn btn-particle" id="parent-mode" onclick="toggleParentMode()">
@@ -929,4 +969,5 @@
     <script src="script.js"></script>
 </body>
 </html>
+
 
