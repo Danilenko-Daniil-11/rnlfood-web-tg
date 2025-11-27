@@ -2755,5 +2755,423 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Цветовые темы
+const COLOR_THEMES = {
+    'emerald': {
+        name: 'Изумрудная',
+        primary: '#10b981',
+        primaryDark: '#059669',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+    },
+    'rose': {
+        name: 'Розовая',
+        primary: '#f43f5e',
+        primaryDark: '#e11d48',
+        secondary: '#8b5cf6',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)'
+    },
+    'amber': {
+        name: 'Янтарная',
+        primary: '#f59e0b',
+        primaryDark: '#d97706',
+        secondary: '#ec4899',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    },
+    'sky': {
+        name: 'Небесная',
+        primary: '#0ea5e9',
+        primaryDark: '#0284c7',
+        secondary: '#8b5cf6',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)'
+    },
+    'violet': {
+        name: 'Фиолетовая',
+        primary: '#8b5cf6',
+        primaryDark: '#7c3aed',
+        secondary: '#ec4899',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    },
+    'cyan': {
+        name: 'Бирюзовая',
+        primary: '#06b6d4',
+        primaryDark: '#0891b2',
+        secondary: '#8b5cf6',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+    },
+    'lime': {
+        name: 'Лаймовая',
+        primary: '#84cc16',
+        primaryDark: '#65a30d',
+        secondary: '#0ea5e9',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)'
+    },
+    'orange': {
+        name: 'Апельсиновая',
+        primary: '#f97316',
+        primaryDark: '#ea580c',
+        secondary: '#ec4899',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+    },
+    'pink': {
+        name: 'Розовое золото',
+        primary: '#ec4899',
+        primaryDark: '#db2777',
+        secondary: '#f59e0b',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
+    },
+    'indigo': {
+        name: 'Индиго',
+        primary: '#6366f1',
+        primaryDark: '#4f46e5',
+        secondary: '#ec4899',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+    },
+    'gold': {
+        name: 'Золотая',
+        primary: '#fbbf24',
+        primaryDark: '#d97706',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        gradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)'
+    },
+    'sunset': {
+        name: 'Закатная',
+        primary: '#f97316',
+        primaryDark: '#c2410c',
+        secondary: '#ec4899',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)'
+    },
+    'ocean': {
+        name: 'Океанская',
+        primary: '#06b6d4',
+        primaryDark: '#0e7490',
+        secondary: '#3b82f6',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)'
+    },
+    'forest': {
+        name: 'Лесная',
+        primary: '#16a34a',
+        primaryDark: '#15803d',
+        secondary: '#65a30d',
+        accent: '#ca8a04',
+        gradient: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)'
+    },
+    'berry': {
+        name: 'Ягодная',
+        primary: '#dc2626',
+        primaryDark: '#b91c1c',
+        secondary: '#ec4899',
+        accent: '#7c3aed',
+        gradient: 'linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%)'
+    }
+};
+
+// Текущая цветовая схема
+let currentColorScheme = 'emerald';
+
+// Функция показа палитры тем
+function showThemePalette() {
+    const grid = document.getElementById('theme-palette-grid');
+    grid.innerHTML = '';
+    
+    Object.entries(COLOR_THEMES).forEach(([key, theme]) => {
+        const themeOption = document.createElement('div');
+        themeOption.className = `theme-option theme-${key} ${currentColorScheme === key ? 'active' : ''}`;
+        themeOption.setAttribute('data-theme', key);
+        themeOption.innerHTML = `
+            <div>${theme.name}</div>
+            <div class="theme-preview">
+                <div class="color-dot" style="background: ${theme.primary}"></div>
+                <div class="color-dot" style="background: ${theme.secondary}"></div>
+                <div class="color-dot" style="background: ${theme.accent}"></div>
+            </div>
+        `;
+        
+        themeOption.addEventListener('click', () => applyColorTheme(key));
+        grid.appendChild(themeOption);
+    });
+    
+    // Загружаем сохранённые кастомные цвета
+    loadCustomColors();
+    
+    openModal('theme-palette-modal');
+}
+
+// Функция применения цветовой темы
+function applyColorTheme(themeKey) {
+    const theme = COLOR_THEMES[themeKey];
+    if (!theme) return;
+    
+    currentColorScheme = themeKey;
+    
+    // Обновляем CSS переменные
+    document.documentElement.style.setProperty('--primary-color', theme.primary);
+    document.documentElement.style.setProperty('--primary-dark', theme.primaryDark);
+    document.documentElement.style.setProperty('--secondary-color', theme.secondary);
+    document.documentElement.style.setProperty('--accent-color', theme.accent);
+    
+    // Обновляем активную тему в палитре
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+    });
+    document.querySelector(`.theme-option[data-theme="${themeKey}"]`).classList.add('active');
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('colorTheme', themeKey);
+    localStorage.setItem('customTheme', 'false');
+    
+    showNotification(`Тема "${theme.name}" применена!`, 'success');
+    
+    // Анимация смены темы
+    animateThemeChange();
+}
+
+// Функция применения пользовательской темы
+function applyCustomTheme() {
+    const primary = document.getElementById('custom-primary').value;
+    const secondary = document.getElementById('custom-secondary').value;
+    const accent = document.getElementById('custom-accent').value;
+    
+    // Рассчитываем тёмные версии цветов
+    const primaryDark = shadeColor(primary, -20);
+    
+    // Применяем цвета
+    document.documentElement.style.setProperty('--primary-color', primary);
+    document.documentElement.style.setProperty('--primary-dark', primaryDark);
+    document.documentElement.style.setProperty('--secondary-color', secondary);
+    document.documentElement.style.setProperty('--accent-color', accent);
+    
+    // Сохраняем кастомные цвета
+    localStorage.setItem('customPrimary', primary);
+    localStorage.setItem('customSecondary', secondary);
+    localStorage.setItem('customAccent', accent);
+    localStorage.setItem('customTheme', 'true');
+    localStorage.setItem('colorTheme', 'custom');
+    
+    currentColorScheme = 'custom';
+    
+    showNotification('Пользовательская тема применена!', 'success');
+    animateThemeChange();
+    
+    // Закрываем модальное окно через секунду
+    setTimeout(() => {
+        closeModal('theme-palette-modal');
+    }, 1000);
+}
+
+// Функция для затемнения цвета
+function shadeColor(color, percent) {
+    let R = parseInt(color.substring(1, 3), 16);
+    let G = parseInt(color.substring(3, 5), 16);
+    let B = parseInt(color.substring(5, 7), 16);
+
+    R = parseInt(R * (100 + percent) / 100);
+    G = parseInt(G * (100 + percent) / 100);
+    B = parseInt(B * (100 + percent) / 100);
+
+    R = (R < 255) ? R : 255;
+    G = (G < 255) ? G : 255;
+    B = (B < 255) ? B : 255;
+
+    R = Math.round(R);
+    G = Math.round(G);
+    B = Math.round(B);
+
+    const RR = ((R.toString(16).length == 1) ? "0" + R.toString(16) : R.toString(16));
+    const GG = ((G.toString(16).length == 1) ? "0" + G.toString(16) : G.toString(16));
+    const BB = ((B.toString(16).length == 1) ? "0" + B.toString(16) : B.toString(16));
+
+    return "#" + RR + GG + BB;
+}
+
+// Загрузка кастомных цветов
+function loadCustomColors() {
+    const customPrimary = localStorage.getItem('customPrimary');
+    const customSecondary = localStorage.getItem('customSecondary');
+    const customAccent = localStorage.getItem('customAccent');
+    
+    if (customPrimary) {
+        document.getElementById('custom-primary').value = customPrimary;
+    }
+    if (customSecondary) {
+        document.getElementById('custom-secondary').value = customSecondary;
+    }
+    if (customAccent) {
+        document.getElementById('custom-accent').value = customAccent;
+    }
+}
+
+// Загрузка сохранённой темы при запуске
+function loadColorTheme() {
+    const savedTheme = localStorage.getItem('colorTheme');
+    const isCustomTheme = localStorage.getItem('customTheme') === 'true';
+    
+    if (isCustomTheme) {
+        // Загружаем кастомную тему
+        const primary = localStorage.getItem('customPrimary') || '#00b377';
+        const secondary = localStorage.getItem('customSecondary') || '#667eea';
+        const accent = localStorage.getItem('customAccent') || '#764ba2';
+        const primaryDark = shadeColor(primary, -20);
+        
+        document.documentElement.style.setProperty('--primary-color', primary);
+        document.documentElement.style.setProperty('--primary-dark', primaryDark);
+        document.documentElement.style.setProperty('--secondary-color', secondary);
+        document.documentElement.style.setProperty('--accent-color', accent);
+        
+        currentColorScheme = 'custom';
+    } else if (savedTheme && COLOR_THEMES[savedTheme]) {
+        // Загружаем предустановленную тему
+        applyColorTheme(savedTheme);
+    } else {
+        // Тема по умолчанию
+        applyColorTheme('emerald');
+    }
+}
+
+// Анимация смены темы
+function animateThemeChange() {
+    // Добавляем класс анимации к body
+    document.body.classList.add('theme-changing');
+    
+    // Создаем эффект пульсации
+    const elements = document.querySelectorAll('.btn-primary, .category-btn.active, .balance-card');
+    elements.forEach(el => {
+        el.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            el.style.transform = 'scale(1)';
+        }, 300);
+    });
+    
+    // Убираем класс анимации
+    setTimeout(() => {
+        document.body.classList.remove('theme-changing');
+    }, 1000);
+}
+
+// CSS для анимации смены темы
+const themeAnimationCSS = `
+<style>
+.body.theme-changing {
+    transition: all 0.5s ease;
+}
+
+.theme-changing .btn-primary,
+.theme-changing .category-btn.active,
+.theme-changing .balance-card {
+    transition: all 0.3s ease;
+}
+
+@keyframes themePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.theme-pulse {
+    animation: themePulse 0.5s ease;
+}
+</style>
+`;
+
+// Добавляем CSS в документ
+document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
+
+// Инициализация темы при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    loadColorTheme();
+});
+
+// Функция сброса темы к стандартной
+function resetToDefaultTheme() {
+    localStorage.removeItem('colorTheme');
+    localStorage.removeItem('customTheme');
+    localStorage.removeItem('customPrimary');
+    localStorage.removeItem('customSecondary');
+    localStorage.removeItem('customAccent');
+    
+    applyColorTheme('emerald');
+    showNotification('Тема сброшена к стандартной!', 'info');
+}
+
+// Добавляем кнопку сброса в модальное окно
+function addResetButtonToPalette() {
+    const modalBody = document.querySelector('#theme-palette-modal .modal-body');
+    const resetButton = document.createElement('button');
+    resetButton.className = 'btn-secondary btn-particle';
+    resetButton.style.marginTop = '15px';
+    resetButton.style.width = '100%';
+    resetButton.innerHTML = '<i class="fas fa-undo"></i> Сбросить к стандартной теме';
+    resetButton.onclick = resetToDefaultTheme;
+    modalBody.appendChild(resetButton);
+}
+
+// Вызываем при инициализации
+addResetButtonToPalette();
+
+// Функция для быстрой смены темы через консоль (для разработки)
+function debugChangeTheme(themeName) {
+    if (COLOR_THEMES[themeName]) {
+        applyColorTheme(themeName);
+    } else {
+        console.log('Доступные темы:', Object.keys(COLOR_THEMES).join(', '));
+    }
+}
+
+// Автоматическая смена темы по времени суток
+function initAutoThemeByTime() {
+    const hour = new Date().getHours();
+    const autoThemeEnabled = localStorage.getItem('autoTheme') === 'true';
+    
+    if (!autoThemeEnabled) return;
+    
+    let theme;
+    if (hour >= 6 && hour < 12) {
+        theme = 'sky'; // Утро
+    } else if (hour >= 12 && hour < 18) {
+        theme = 'emerald'; // День
+    } else if (hour >= 18 && hour < 22) {
+        theme = 'amber'; // Вечер
+    } else {
+        theme = 'violet'; // Ночь
+    }
+    
+    if (currentColorScheme !== theme) {
+        applyColorTheme(theme);
+        showNotification(`Авто-тема: ${COLOR_THEMES[theme].name}`, 'info');
+    }
+}
+
+// Включение/выключение авто-темы
+function toggleAutoTheme() {
+    const autoThemeEnabled = localStorage.getItem('autoTheme') === 'true';
+    localStorage.setItem('autoTheme', (!autoThemeEnabled).toString());
+    
+    showNotification(
+        autoThemeEnabled ? 'Авто-тема выключена' : 'Авто-тема включена',
+        'success'
+    );
+    
+    if (!autoThemeEnabled) {
+        initAutoThemeByTime();
+    }
+}
+
+// Добавляем в инициализацию
+setInterval(initAutoThemeByTime, 600000); // Проверка каждые 10 минут
+
 // Инициализация всех улучшений
 loadAvatar();
+
