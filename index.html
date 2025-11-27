@@ -10,42 +10,96 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="light-theme">
+    <!-- Конфетти контейнер -->
+    <canvas id="confetti-canvas"></canvas>
+    
+    <!-- Снег/листья контейнер -->
+    <div id="seasonal-effects"></div>
+    
+    <!-- Кастомный курсор -->
+    <div id="custom-cursor"></div>
+    
+    <!-- Прогресс бар чтения -->
+    <div id="reading-progress"></div>
+    
     <!-- Header -->
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <div class="logo-section">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300b377'/%3E%3Ctext x='50' y='60' font-family='Arial' font-size='30' fill='white' text-anchor='middle'%3ERNL%3C/text%3E%3C/svg%3E" alt="РНЛ ЕДА" class="logo">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300b377'/%3E%3Ctext x='50' y='60' font-family='Arial' font-size='30' fill='white' text-anchor='middle'%3ERNL%3C/text%3E%3C/svg%3E" 
+                         alt="РНЛ ЕДА" class="logo" id="main-logo">
                     <div>
                         <div class="logo-text">Ришельевский Научный Лицей</div>
                         <div class="logo-subtext">Сервис питания</div>
                     </div>
                 </div>
                 <div class="header-actions">
+                    <!-- Голосовое управление -->
+                    <button class="voice-btn btn-particle" id="voice-control">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    
                     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
                         <i class="fas fa-moon"></i>
                     </button>
+                    
+                    <!-- Режим для родителей -->
+                    <button class="parent-mode-btn btn-particle" id="parent-mode" onclick="toggleParentMode()">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                    
+                    <!-- Случайное блюдо -->
+                    <button class="random-dish-btn btn-particle" onclick="showRandomDish()">
+                        <i class="fas fa-dice"></i>
+                    </button>
+                    
                     <div class="promo-btn btn-particle" onclick="showPromoModal()">
                         <i class="fas fa-tag"></i>
                         Промокод
                     </div>
-                    <div class="cart-icon" onclick="goTo('assortment')">
+                    
+                    <div class="cart-icon" id="cart-icon" onclick="goTo('assortment')">
                         <i class="fas fa-shopping-basket"></i>
                         <span id="cart-count" class="cart-count">0</span>
                     </div>
+                    
                     <div class="avatar" onclick="goTo('profile')">
                         <i class="fas fa-user"></i>
                     </div>
+                    
                     <button class="logout-btn btn-particle" id="logout-btn" onclick="logout()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i>
                         Выйти
                     </button>
+                    
                     <button class="admin-btn btn-particle" id="admin-btn" onclick="goTo('admin')" style="display: none;">
                         <i class="fas fa-cog"></i>
                         Админ
                     </button>
                 </div>
             </div>
+            
+            <!-- Нижняя навигация для мобильных -->
+            <nav class="bottom-nav" id="bottom-nav">
+                <button class="nav-btn active" onclick="goTo('assortment')">
+                    <i class="fas fa-utensils"></i>
+                    <span>Меню</span>
+                </button>
+                <button class="nav-btn" onclick="goTo('favorites')">
+                    <i class="fas fa-heart"></i>
+                    <span>Избранное</span>
+                </button>
+                <button class="nav-btn" onclick="goTo('assortment')">
+                    <i class="fas fa-shopping-basket"></i>
+                    <span>Корзина</span>
+                    <span class="nav-badge" id="mobile-cart-count">0</span>
+                </button>
+                <button class="nav-btn" onclick="goTo('profile')">
+                    <i class="fas fa-user"></i>
+                    <span>Профиль</span>
+                </button>
+            </nav>
         </div>
     </header>
 
@@ -55,7 +109,8 @@
             <!-- Start Screen -->
             <section id="start" class="screen active">
                 <div class="hero">
-                    <h1 class="hero-title">
+                    <div class="parallax-bg"></div>
+                    <h1 class="hero-title typewriter">
                         ОФИЦИАЛЬНЫЙ САЙТ СЕРВИСА<br>
                         ПО ПОКУПКЕ ПРОПИТАНИЯ ДЛЯ<br>
                         <span class="highlight">РИШЕЛЬЕВСКОГО ЛИЦЕЯ</span>
@@ -63,13 +118,58 @@
                     <div class="hero-subtitle">
                         <p>Быстрый заказ еды без очередей</p>
                     </div>
+                    
+                    <!-- Карусель отзывов -->
+                    <div class="reviews-carousel">
+                        <div class="review-slide active">
+                            <p>"Лучший сервис в лицее! 🍕"</p>
+                            <span>- Мария, 10-А</span>
+                        </div>
+                        <div class="review-slide">
+                            <p>"Экономлю время на переменах ⏰"</p>
+                            <span>- Алексей, 9-Б</span>
+                        </div>
+                        <div class="review-slide">
+                            <p>"Котлеты просто объедение! 😋"</p>
+                            <span>- София, 11-В</span>
+                        </div>
+                    </div>
+                    
                     <div class="btn-contain">
                         <button class="btn-primary btn-particle" onclick="goTo('login')">
                             <span>ПРОДОЛЖИТЬ</span>
                             <i class="fas fa-arrow-right"></i>
                         </button>
+                        
+                        <!-- Кнопка "Мне повезёт" -->
+                        <button class="btn-secondary btn-particle lucky-btn" onclick="goToRandomSection()">
+                            <i class="fas fa-clover"></i>
+                            Мне повезёт
+                        </button>
                     </div>
                 </div>
+                
+                <!-- Блюдо дня -->
+                <div class="dish-of-the-day">
+                    <h3>🍽️ Блюдо дня</h3>
+                    <div class="daily-dish-card">
+                        <div class="dish-image">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="dish-info">
+                            <h4 id="daily-dish-name">Куриный суп</h4>
+                            <p class="dish-price">25 ₴</p>
+                            <div class="dish-timer">
+                                <i class="fas fa-clock"></i>
+                                <span id="dish-timer">20:00</span>
+                            </div>
+                        </div>
+                        <button class="btn-primary btn-particle" onclick="addDailyDishToCart()">
+                            <i class="fas fa-cart-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="authors" id="authors">
                     <p>MADE BY:</p>
                     <p>DANYLENKO DANIIL</p>
@@ -81,6 +181,15 @@
             <section id="login" class="screen">
                 <div class="form-container">
                     <h2>РЕГИСТРАЦИЯ / ВХОД</h2>
+                    
+                    <!-- Упрощённый режим для первоклашек -->
+                    <div class="simple-mode-toggle">
+                        <button class="btn-simple-mode" onclick="toggleSimpleMode()">
+                            <i class="fas fa-child"></i>
+                            Режим для первоклашек
+                        </button>
+                    </div>
+                    
                     <div class="input-group">
                         <input type="text" id="username" placeholder=" " required>
                         <label for="username">Логин</label>
@@ -116,6 +225,36 @@
                 </div>
             </section>
 
+            <!-- Избранное -->
+            <section id="favorites" class="screen">
+                <div class="page-header">
+                    <h2>❤️ ИЗБРАННОЕ</h2>
+                    <div class="header-actions">
+                        <button class="btn-back btn-particle" onclick="goTo('assortment')">
+                            <i class="fas fa-arrow-left"></i>
+                            Назад
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="favorites-scroll">
+                    <div class="favorites-container" id="favorites-container">
+                        <!-- Избранные блюда будут здесь -->
+                    </div>
+                </div>
+                
+                <div class="empty-favorites" id="empty-favorites">
+                    <div class="empty-state">
+                        <i class="fas fa-heart-broken"></i>
+                        <h3>Пока ничего нет в избранном</h3>
+                        <p>Добавляйте сюда любимые блюда!</p>
+                        <button class="btn-primary btn-particle" onclick="goTo('assortment')">
+                            Перейти в меню
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             <!-- Profile Screen -->
             <section id="profile" class="screen">
                 <div class="profile-header">
@@ -131,6 +270,19 @@
                                 ПОПОЛНИТЬ
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Аватар с загрузкой -->
+                <div class="avatar-section">
+                    <div class="avatar-upload">
+                        <div class="avatar-preview" id="avatar-preview">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                        <button class="btn-upload" onclick="document.getElementById('avatar-input').click()">
+                            <i class="fas fa-camera"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -175,6 +327,30 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Достижения -->
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-trophy"></i> ДОСТИЖЕНИЯ</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="achievements-grid" id="achievements-container">
+                                <!-- Достижения будут здесь -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Статистика калорий -->
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> СТАТИСТИКА КАЛОРИЙ</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="calories-chart">
+                                <canvas id="caloriesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="profile-actions">
@@ -191,9 +367,69 @@
             <section id="assortment" class="screen">
                 <div class="page-header">
                     <h2>АССОРТИМЕНТ</h2>
-                    <div class="search-bar">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Поиск продуктов..." id="search-input">
+                    <div class="header-controls">
+                        <!-- Поиск с автоподсказками -->
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Поиск продуктов..." id="search-input">
+                            <div class="search-suggestions" id="search-suggestions"></div>
+                        </div>
+                        
+                        <!-- Фильтры и сортировка -->
+                        <div class="filter-controls">
+                            <button class="filter-btn btn-particle" onclick="toggleFilterPanel()">
+                                <i class="fas fa-filter"></i>
+                                Фильтры
+                            </button>
+                            
+                            <select class="sort-select" id="sort-select" onchange="sortProducts()">
+                                <option value="default">По умолчанию</option>
+                                <option value="price_asc">Цена ↑</option>
+                                <option value="price_desc">Цена ↓</option>
+                                <option value="popular">Популярность</option>
+                                <option value="calories">Калории</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Панель фильтров -->
+                <div class="filter-panel" id="filter-panel">
+                    <div class="filter-group">
+                        <h4>Диетические предпочтения</h4>
+                        <div class="filter-options">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="filter-vegetarian" onchange="applyFilters()">
+                                <span class="checkmark"></span>
+                                Вегетарианское
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="filter-gluten-free" onchange="applyFilters()">
+                                <span class="checkmark"></span>
+                                Без глютена
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <h4>Цена</h4>
+                        <div class="price-slider">
+                            <input type="range" id="price-slider" min="10" max="150" value="150" onchange="updatePriceRange()">
+                            <div class="price-range">
+                                <span>10 ₴</span>
+                                <span id="current-price">150 ₴</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <h4>Аллергены</h4>
+                        <div class="allergen-tags">
+                            <span class="allergen-tag" data-allergen="milk">Молоко</span>
+                            <span class="allergen-tag" data-allergen="nuts">Орехи</span>
+                            <span class="allergen-tag" data-allergen="gluten">Глютен</span>
+                            <span class="allergen-tag" data-allergen="eggs">Яйца</span>
+                        </div>
                     </div>
                 </div>
 
@@ -216,9 +452,18 @@
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
+                    
+                    <!-- Общий счётчик калорий -->
+                    <div class="calories-counter">
+                        <i class="fas fa-fire"></i>
+                        <span>Калории: </span>
+                        <span id="total-calories">0</span>
+                    </div>
+                    
                     <div class="cart-items" id="cart-items">
                         <!-- Cart items will be loaded by JavaScript -->
                     </div>
+                    
                     <div class="promo-section">
                         <div class="promo-input">
                             <input type="text" id="promo-code" placeholder="Промокод">
@@ -228,24 +473,43 @@
                         </div>
                         <div id="promo-message" class="promo-message"></div>
                     </div>
+                    
                     <div class="cart-total">
                         <span>Итого:</span>
                         <span id="cart-total">0 ₴</span>
                     </div>
+                    
                     <div class="cart-discount" id="cart-discount" style="display: none;">
                         <span>Скидка:</span>
                         <span id="discount-amount">0 ₴</span>
                     </div>
+                    
                     <div class="cart-final" id="cart-final">
                         <span>К оплате:</span>
                         <span id="final-total">0 ₴</span>
                     </div>
+                    
                     <div class="btn-contain">
                         <button class="btn-primary btn-order btn-particle" onclick="placeOrder()">
                             <span>ОФОРМИТЬ ЗАКАЗ</span>
                             <i class="fas fa-shopping-basket"></i>
                         </button>
+                        
+                        <!-- Кнопка поделиться заказом -->
+                        <button class="btn-secondary btn-particle" onclick="shareOrder()">
+                            <i class="fas fa-share"></i>
+                            Поделиться
+                        </button>
                     </div>
+                </div>
+                
+                <!-- Пустая корзина -->
+                <div class="empty-cart-state" id="empty-cart">
+                    <div class="empty-plate">
+                        <i class="fas fa-plate-utensils"></i>
+                    </div>
+                    <h3>Корзина пуста</h3>
+                    <p>Добавьте что-нибудь вкусненькое!</p>
                 </div>
             </section>
 
@@ -256,11 +520,30 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <h2>СПАСИБО ЗА ПОКУПКУ!</h2>
-                    <p>ВАШ ЗАКАЗ БУДЕТ ГОТОВ ЧЕРЕЗ <span class="countdown">20</span> МИНУТ В СТОЛОВОЙ</p>
+                    
+                    <!-- Прогресс-бар готовности -->
+                    <div class="order-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="order-progress"></div>
+                        </div>
+                        <div class="progress-text">
+                            Ваш заказ будет готов через <span class="countdown">20</span> минут в столовой
+                        </div>
+                    </div>
+                    
                     <div class="order-details">
                         <h3>Детали заказа:</h3>
                         <div id="order-details-list"></div>
                     </div>
+                    
+                    <!-- Кнопка повторить заказ -->
+                    <div class="order-actions">
+                        <button class="btn-secondary btn-particle" onclick="repeatOrder()">
+                            <i class="fas fa-redo"></i>
+                            Повторить заказ
+                        </button>
+                    </div>
+                    
                     <div class="btn-contain">
                         <button class="btn-primary btn-particle" onclick="goTo('assortment')">
                             <span>ВЕРНУТЬСЯ В АССОРТИМЕНТ</span>
@@ -440,11 +723,27 @@
         </div>
     </main>
 
+    <!-- Кнопка "Наверх" -->
+    <button class="scroll-to-top" id="scroll-to-top">
+        <i class="fas fa-rocket"></i>
+    </button>
+
     <!-- Notification -->
     <div id="notification" class="notification">
         <div class="notification-content">
             <i class="fas fa-check-circle"></i>
             <span id="notification-text">Текст уведомления</span>
+        </div>
+    </div>
+
+    <!-- Достижение уведомление -->
+    <div id="achievement-notification" class="achievement-notification">
+        <div class="achievement-content">
+            <i class="fas fa-trophy"></i>
+            <div class="achievement-info">
+                <h4>Новое достижение!</h4>
+                <p id="achievement-text">Текст достижения</p>
+            </div>
         </div>
     </div>
 
@@ -616,10 +915,28 @@
 
     <!-- Loading Spinner -->
     <div id="loading" class="loading">
-        <div class="spinner"></div>
+        <div class="spinner">
+            <div class="plate">
+                <i class="fas fa-utensils"></i>
+            </div>
+            <div class="steam"></div>
+        </div>
         <p>Загрузка...</p>
     </div>
 
+    <!-- Всплывашка при закрытии -->
+    <div id="exit-popup" class="exit-popup">
+        <div class="exit-content">
+            <h3>Ещё котлетку? 🍔</h3>
+            <p>Не уходите голодным!</p>
+            <div class="exit-actions">
+                <button class="btn-primary" onclick="goTo('assortment')">Заказать ещё</button>
+                <button class="btn-secondary" onclick="hideExitPopup()">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
