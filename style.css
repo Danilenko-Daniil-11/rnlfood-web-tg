@@ -3011,3 +3011,217 @@ body.high-contrast .btn-secondary {
     opacity: 0.1;
     pointer-events: none;
 }
+
+/* Кнопка палитры тем */
+.theme-palette-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1em;
+}
+
+.theme-palette-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: rotate(15deg);
+}
+
+/* Сетка выбора тем */
+.theme-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.theme-option {
+    position: relative;
+    padding: 20px 15px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+    text-align: center;
+    font-weight: 600;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.theme-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.theme-option.active {
+    border-color: currentColor;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.theme-option.active::after {
+    content: '✓';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255,255,255,0.9);
+    color: #000;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.theme-preview {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.color-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+
+/* Секция пользовательской темы */
+.custom-theme-section {
+    border-top: 2px solid var(--border);
+    padding-top: 25px;
+    margin-top: 20px;
+}
+
+.custom-theme-section h4 {
+    margin-bottom: 15px;
+    color: var(--text-dark);
+    text-align: center;
+}
+
+.color-picker-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.color-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-picker label {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+}
+
+.color-picker input[type="color"] {
+    width: 100%;
+    height: 40px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: var(--card-bg);
+}
+
+.color-picker input[type="color"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Специфические цветовые темы */
+.theme-emerald {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.theme-rose {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+}
+
+.theme-amber {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.theme-sky {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.theme-violet {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.theme-cyan {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.theme-lime {
+    background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+}
+
+.theme-orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.theme-pink {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+}
+
+.theme-indigo {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.theme-gold {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+}
+
+.theme-sunset {
+    background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
+}
+
+.theme-ocean {
+    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+}
+
+.theme-forest {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%);
+}
+
+.theme-berry {
+    background: linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%);
+}
+
+/* Адаптивность для модального окна тем */
+@media (max-width: 768px) {
+    .theme-palette-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .color-picker-group {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-palette-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .theme-option {
+        padding: 15px 10px;
+        font-size: 0.9em;
+    }
+}
