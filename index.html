@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="light-theme">
     <!-- Header -->
@@ -24,7 +25,7 @@
                     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <div class="promo-btn" onclick="showPromoModal()">
+                    <div class="promo-btn btn-particle" onclick="showPromoModal()">
                         <i class="fas fa-tag"></i>
                         Промокод
                     </div>
@@ -35,11 +36,11 @@
                     <div class="avatar" onclick="goTo('profile')">
                         <i class="fas fa-user"></i>
                     </div>
-                    <button class="logout-btn" id="logout-btn" onclick="logout()" style="display: none;">
+                    <button class="logout-btn btn-particle" id="logout-btn" onclick="logout()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i>
                         Выйти
                     </button>
-                    <button class="admin-btn" id="admin-btn" onclick="goTo('admin')" style="display: none;">
+                    <button class="admin-btn btn-particle" id="admin-btn" onclick="goTo('admin')" style="display: none;">
                         <i class="fas fa-cog"></i>
                         Админ
                     </button>
@@ -62,10 +63,12 @@
                     <div class="hero-subtitle">
                         <p>Быстрый заказ еды без очередей</p>
                     </div>
-                    <button class="btn-primary" onclick="goTo('login')">
-                        <span>ПРОДОЛЖИТЬ</span>
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+                    <div class="btn-contain">
+                        <button class="btn-primary btn-particle" onclick="goTo('login')">
+                            <span>ПРОДОЛЖИТЬ</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="authors" id="authors">
                     <p>MADE BY:</p>
@@ -95,12 +98,20 @@
                             Запомнить меня
                         </label>
                     </div>
-                    <button class="btn-primary" onclick="login()">
-                        <span>ВОЙТИ В СИСТЕМУ</span>
-                        <i class="fas fa-sign-in-alt"></i>
-                    </button>
+                    <div class="btn-contain">
+                        <button class="btn-primary btn-particle" onclick="login()">
+                            <span>ВОЙТИ В СИСТЕМУ</span>
+                            <i class="fas fa-sign-in-alt"></i>
+                        </button>
+                    </div>
                     <div class="form-footer">
-                        <p>Нет аккаунта? <a href="#" onclick="showRegisterModal()">Зарегистрироваться</a></p>
+                        <p>Нет аккаунта?</p>
+                        <div class="btn-contain" style="margin-top: 10px;">
+                            <button class="btn-secondary btn-particle" onclick="showRegisterModal()" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-user-plus"></i>
+                                Зарегистрироваться
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -114,10 +125,12 @@
                             <h3>БАЛАНС</h3>
                             <div class="balance-amount" id="balance">0.00 ₴</div>
                         </div>
-                        <button class="btn-secondary" onclick="goTo('payment')">
-                            <i class="fas fa-plus"></i>
-                            ПОПОЛНИТЬ
-                        </button>
+                        <div class="btn-contain">
+                            <button class="btn-secondary btn-particle" onclick="goTo('payment')">
+                                <i class="fas fa-plus"></i>
+                                ПОПОЛНИТЬ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -125,7 +138,7 @@
                     <div class="profile-card">
                         <div class="card-header">
                             <h3><i class="fas fa-user-circle"></i> ЛИЧНЫЕ ДАННЫЕ</h3>
-                            <button class="btn-edit" onclick="editProfile()">
+                            <button class="btn-edit btn-particle" onclick="editProfile()">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
@@ -152,7 +165,7 @@
                     <div class="profile-card">
                         <div class="card-header">
                             <h3><i class="fas fa-history"></i> ИСТОРИЯ ЗАКАЗОВ</h3>
-                            <button class="btn-more" onclick="showFullOrderHistory()">
+                            <button class="btn-more btn-particle" onclick="showFullOrderHistory()">
                                 <i class="fas fa-ellipsis-h"></i>
                             </button>
                         </div>
@@ -165,10 +178,12 @@
                 </div>
 
                 <div class="profile-actions">
-                    <button class="btn-primary" onclick="goTo('assortment')">
-                        <span>ПЕРЕЙТИ В АССОРТИМЕНТ</span>
-                        <i class="fas fa-utensils"></i>
-                    </button>
+                    <div class="btn-contain">
+                        <button class="btn-primary btn-particle" onclick="goTo('assortment')">
+                            <span>ПЕРЕЙТИ В АССОРТИМЕНТ</span>
+                            <i class="fas fa-utensils"></i>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -197,7 +212,7 @@
                 <div class="cart-summary" id="cart-summary">
                     <div class="cart-header">
                         <h3>Ваш заказ</h3>
-                        <button class="btn-clear" onclick="clearCart()">
+                        <button class="btn-clear btn-particle" onclick="clearCart()">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -207,7 +222,9 @@
                     <div class="promo-section">
                         <div class="promo-input">
                             <input type="text" id="promo-code" placeholder="Промокод">
-                            <button class="btn-promo" onclick="applyPromo()">Применить</button>
+                            <div class="btn-contain" style="display: inline;">
+                                <button class="btn-promo btn-particle" onclick="applyPromo()">Применить</button>
+                            </div>
                         </div>
                         <div id="promo-message" class="promo-message"></div>
                     </div>
@@ -223,10 +240,12 @@
                         <span>К оплате:</span>
                         <span id="final-total">0 ₴</span>
                     </div>
-                    <button class="btn-primary btn-order" onclick="placeOrder()">
-                        <span>ОФОРМИТЬ ЗАКАЗ</span>
-                        <i class="fas fa-shopping-basket"></i>
-                    </button>
+                    <div class="btn-contain">
+                        <button class="btn-primary btn-order btn-particle" onclick="placeOrder()">
+                            <span>ОФОРМИТЬ ЗАКАЗ</span>
+                            <i class="fas fa-shopping-basket"></i>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -242,10 +261,12 @@
                         <h3>Детали заказа:</h3>
                         <div id="order-details-list"></div>
                     </div>
-                    <button class="btn-primary" onclick="goTo('assortment')">
-                        <span>ВЕРНУТЬСЯ В АССОРТИМЕНТ</span>
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
+                    <div class="btn-contain">
+                        <button class="btn-primary btn-particle" onclick="goTo('assortment')">
+                            <span>ВЕРНУТЬСЯ В АССОРТИМЕНТ</span>
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -253,19 +274,21 @@
             <section id="payment" class="screen">
                 <div class="page-header">
                     <h2>ПОПОЛНЕНИЕ СЧЕТА</h2>
-                    <button class="btn-back" onclick="goTo('profile')">
-                        <i class="fas fa-arrow-left"></i>
-                        Назад
-                    </button>
+                    <div class="btn-contain" style="display: inline-block;">
+                        <button class="btn-back btn-particle" onclick="goTo('profile')">
+                            <i class="fas fa-arrow-left"></i>
+                            Назад
+                        </button>
+                    </div>
                 </div>
 
                 <div class="payment-amount">
                     <h3>Выберите сумму пополнения</h3>
                     <div class="amount-options">
-                        <button class="amount-btn" data-amount="50">50 ₴</button>
-                        <button class="amount-btn" data-amount="100">100 ₴</button>
-                        <button class="amount-btn" data-amount="200">200 ₴</button>
-                        <button class="amount-btn" data-amount="500">500 ₴</button>
+                        <button class="amount-btn btn-particle" data-amount="50">50 ₴</button>
+                        <button class="amount-btn btn-particle" data-amount="100">100 ₴</button>
+                        <button class="amount-btn btn-particle" data-amount="200">200 ₴</button>
+                        <button class="amount-btn btn-particle" data-amount="500">500 ₴</button>
                     </div>
                     <div class="custom-amount">
                         <input type="number" id="custom-amount" placeholder="Другая сумма" min="10" max="1000">
@@ -283,15 +306,19 @@
                             <p>Скопировать адрес кошелька</p>
                             <div class="wallet-address">
                                 <span id="crypto-address">1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</span>
-                                <button class="btn-copy" onclick="copyToClipboard('crypto-address')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
+                                <div class="btn-contain" style="display: inline;">
+                                    <button class="btn-copy btn-particle" onclick="copyToClipboard('crypto-address')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="commission">Комиссия: 1%</div>
-                        <button class="btn-primary" onclick="processPayment('crypto')">
-                            ПОПОЛНИТЬ
-                        </button>
+                        <div class="btn-contain">
+                            <button class="btn-primary btn-particle" onclick="processPayment('crypto')">
+                                ПОПОЛНИТЬ
+                            </button>
+                        </div>
                     </div>
 
                     <div class="payment-method">
@@ -303,15 +330,19 @@
                             <p>Скопировать номер карты</p>
                             <div class="wallet-address">
                                 <span id="card-number">5375 4141 0000 1234</span>
-                                <button class="btn-copy" onclick="copyToClipboard('card-number')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
+                                <div class="btn-contain" style="display: inline;">
+                                    <button class="btn-copy btn-particle" onclick="copyToClipboard('card-number')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="commission">Комиссия: 2.5%</div>
-                        <button class="btn-primary" onclick="processPayment('card')">
-                            ПОПОЛНИТЬ
-                        </button>
+                        <div class="btn-contain">
+                            <button class="btn-primary btn-particle" onclick="processPayment('card')">
+                                ПОПОЛНИТЬ
+                            </button>
+                        </div>
                     </div>
 
                     <div class="payment-method">
@@ -323,9 +354,11 @@
                             <p>Деньги нужно передать завучу, который находится в кабинете 215</p>
                         </div>
                         <div class="commission">Без комиссии</div>
-                        <button class="btn-primary" onclick="processPayment('cash')">
-                            ПОПОЛНИТЬ
-                        </button>
+                        <div class="btn-contain">
+                            <button class="btn-primary btn-particle" onclick="processPayment('cash')">
+                                ПОПОЛНИТЬ
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -334,10 +367,12 @@
             <section id="order-history" class="screen">
                 <div class="page-header">
                     <h2>ИСТОРИЯ ЗАКАЗОВ</h2>
-                    <button class="btn-back" onclick="goTo('profile')">
-                        <i class="fas fa-arrow-left"></i>
-                        Назад
-                    </button>
+                    <div class="btn-contain" style="display: inline-block;">
+                        <button class="btn-back btn-particle" onclick="goTo('profile')">
+                            <i class="fas fa-arrow-left"></i>
+                            Назад
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="order-history-container">
@@ -355,10 +390,12 @@
             <section id="admin" class="screen">
                 <div class="page-header">
                     <h2>АДМИН ПАНЕЛЬ</h2>
-                    <button class="btn-back" onclick="goTo('profile')">
-                        <i class="fas fa-arrow-left"></i>
-                        Назад
-                    </button>
+                    <div class="btn-contain" style="display: inline-block;">
+                        <button class="btn-back btn-particle" onclick="goTo('profile')">
+                            <i class="fas fa-arrow-left"></i>
+                            Назад
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="admin-container">
@@ -416,7 +453,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Редактирование профиля</h3>
-                <button class="modal-close" onclick="closeModal('edit-profile-modal')">
+                <button class="modal-close btn-particle" onclick="closeModal('edit-profile-modal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -469,8 +506,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModal('edit-profile-modal')">Отмена</button>
-                <button class="btn-primary" onclick="saveProfile()">Сохранить</button>
+                <div class="btn-contain" style="display: inline-block;">
+                    <button class="btn-secondary btn-particle" onclick="closeModal('edit-profile-modal')">Отмена</button>
+                </div>
+                <div class="btn-contain" style="display: inline-block;">
+                    <button class="btn-primary btn-particle" onclick="saveProfile()">Сохранить</button>
+                </div>
             </div>
         </div>
     </div>
@@ -480,7 +521,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Активные промокоды</h3>
-                <button class="modal-close" onclick="closeModal('promo-modal')">
+                <button class="modal-close btn-particle" onclick="closeModal('promo-modal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -497,7 +538,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Регистрация</h3>
-                <button class="modal-close" onclick="closeModal('register-modal')">
+                <button class="modal-close btn-particle" onclick="closeModal('register-modal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -558,8 +599,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModal('register-modal')">Отмена</button>
-                <button class="btn-primary" onclick="register()">Зарегистрироваться</button>
+                <div class="btn-contain" style="display: inline-block;">
+                    <button class="btn-secondary btn-particle" onclick="closeModal('register-modal')">Отмена</button>
+                </div>
+                <div class="btn-contain" style="display: inline-block;">
+                    <button class="btn-primary btn-particle" onclick="register()">Зарегистрироваться</button>
+                </div>
             </div>
         </div>
     </div>
