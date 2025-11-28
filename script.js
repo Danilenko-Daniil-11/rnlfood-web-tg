@@ -1,14 +1,6 @@
 // Конфигурация API
 const API_BASE_URL = window.location.origin;
 
-// Все переменные окружения только в рендере (фронтенде)
-const CONFIG = {
-    BOT_TOKEN: '8530207641:AAE4IBVS8LYUOr1_1FUggV3ha_7vHvH5Zu4',
-    DATABASE_URL: 'postgresql://neondb_owner:npg_F2IgpeVxWY9f@ep-green-surf-adj262qr-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
-    JWT_SECRET: '67a4224b576a2b3ace0e7aa9a1ec1392a3ddd858bf99c84f0d2fdd9a4b8dd44dc8152dd2409988d19a38c6266dded3e307850c95787852072e807fb448d1c5dd',
-    NODE_ENV: 'production'
-};
-
 // Основные переменные
 let currentUser = null;
 let cart = {};
