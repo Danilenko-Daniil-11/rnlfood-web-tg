@@ -187,7 +187,7 @@ body.simple-mode .btn-secondary {
 }
 
 .logo-text {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 700;
     font-size: 1.2em;
     color: var(--text-dark);
@@ -414,7 +414,7 @@ body.simple-mode .btn-secondary {
     display: none;
     opacity: 0;
     transform: translateY(20px);
-    transition: all 0.5s ease;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .screen.active {
@@ -451,9 +451,9 @@ body.simple-mode .btn-secondary {
 }
 
 .hero-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 3em;
-    font-weight: 900;
+    font-weight: 800;
     line-height: 1.2;
     margin-bottom: 20px;
     position: relative;
@@ -665,7 +665,8 @@ body.simple-mode .btn-secondary {
 .form-container h2 {
     text-align: center;
     margin-bottom: 30px;
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
     color: var(--text-dark);
 }
 
@@ -779,7 +780,7 @@ body.simple-mode .btn-secondary {
 }
 
 .btn-simple-mode {
-    padding: 10px 20px;
+    padding: 12px 20px;
     background: var(--card-bg);
     border: 2px solid var(--border);
     border-radius: var(--radius);
@@ -787,11 +788,27 @@ body.simple-mode .btn-secondary {
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9em;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .btn-simple-mode:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
+}
+
+/* Исправление для кнопки регистрации */
+.login-btn-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.register-btn {
+    width: 100%;
+    justify-content: center;
 }
 
 /* Избранное */
@@ -855,8 +872,12 @@ body.simple-mode .btn-secondary {
 }
 
 .profile-header h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 1.8em;
     color: var(--text-dark);
+    letter-spacing: -0.5px;
+    margin: 0;
 }
 
 .balance-card {
@@ -879,6 +900,7 @@ body.simple-mode .btn-secondary {
 .balance-amount {
     font-size: 2em;
     font-weight: 700;
+    color: inherit !important;
 }
 
 /* Аватар */
@@ -910,6 +932,7 @@ body.simple-mode .btn-secondary {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 50%;
 }
 
 .btn-upload {
@@ -948,6 +971,12 @@ body.simple-mode .btn-secondary {
         align-items: flex-start;
     }
     
+    .profile-header h2 {
+        text-align: center;
+        width: 100%;
+        font-size: 1.5em;
+    }
+    
     .balance-card {
         min-width: auto;
         width: 100%;
@@ -976,6 +1005,7 @@ body.simple-mode .btn-secondary {
     align-items: center;
     gap: 10px;
     font-size: 1.1em;
+    font-weight: 600;
 }
 
 .btn-edit, .btn-more {
@@ -1104,6 +1134,10 @@ body.simple-mode .btn-secondary {
     position: relative;
 }
 
+.calories-chart canvas {
+    max-width: 100%;
+}
+
 .profile-actions {
     text-align: center;
 }
@@ -1119,7 +1153,8 @@ body.simple-mode .btn-secondary {
 }
 
 .page-header h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
     color: var(--text-dark);
 }
 
@@ -1260,6 +1295,7 @@ body.simple-mode .btn-secondary {
     margin-bottom: 15px;
     color: var(--text-dark);
     font-size: 1em;
+    font-weight: 600;
 }
 
 .filter-options {
@@ -2084,9 +2120,15 @@ body.simple-mode .btn-secondary {
     overflow-y: auto;
     animation: scaleIn 0.3s ease-out;
     border: 1px solid var(--border);
-    backdrop-filter: blur(20px);
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+}
+
+.theme-modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-height: 80vh;
+    margin: 0;
 }
 
 @keyframes scaleIn {
@@ -2106,11 +2148,13 @@ body.simple-mode .btn-secondary {
     align-items: center;
     padding: 25px;
     border-bottom: 1px solid var(--border);
+    position: relative;
 }
 
 .modal-header h3 {
     color: var(--text-dark);
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
 }
 
 .modal-close {
@@ -2122,6 +2166,10 @@ body.simple-mode .btn-secondary {
     border-radius: 5px;
     transition: all 0.3s ease;
     color: var(--text-light);
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 11;
 }
 
 .modal-close:hover {
@@ -2939,6 +2987,16 @@ body.simple-mode .btn-secondary {
     .items-grid {
         grid-template-columns: 1fr;
     }
+    
+    .btn-simple-mode {
+        font-size: 1em;
+        padding: 12px;
+    }
+    
+    .register-btn {
+        padding: 12px 15px;
+        font-size: 0.9em;
+    }
 }
 
 /* Специальные режимы */
@@ -3051,8 +3109,9 @@ body.high-contrast .btn-secondary {
     border: 3px solid transparent;
     text-align: center;
     font-weight: 600;
-    color: white;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    color: var(--text-dark);
+    background: var(--background);
+    border: 2px solid var(--border);
 }
 
 .theme-option:hover {
@@ -3061,7 +3120,7 @@ body.high-contrast .btn-secondary {
 }
 
 .theme-option.active {
-    border-color: currentColor;
+    border-color: var(--primary-color);
     transform: scale(1.05);
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
@@ -3071,8 +3130,8 @@ body.high-contrast .btn-secondary {
     position: absolute;
     top: 5px;
     right: 5px;
-    background: rgba(255,255,255,0.9);
-    color: #000;
+    background: var(--primary-color);
+    color: var(--white);
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -3094,7 +3153,7 @@ body.high-contrast .btn-secondary {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.5);
+    border: 2px solid var(--border);
 }
 
 /* Секция пользовательской темы */
@@ -3108,6 +3167,7 @@ body.high-contrast .btn-secondary {
     margin-bottom: 15px;
     color: var(--text-dark);
     text-align: center;
+    font-weight: 600;
 }
 
 .color-picker-group {
@@ -3143,85 +3203,31 @@ body.high-contrast .btn-secondary {
     border-color: var(--primary-color);
 }
 
-/* Специфические цветовые темы */
-.theme-emerald {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+/* Анимации конфетти */
+@keyframes confettiPop {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
-.theme-rose {
-    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+.confetti-animation {
+    animation: confettiPop 1s ease-out forwards;
 }
 
-.theme-amber {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+/* Сообщение о пустых результатах */
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
 }
 
-.theme-sky {
-    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+.no-results i {
+    font-size: 3em;
+    margin-bottom: 15px;
+    opacity: 0.5;
 }
 
-.theme-violet {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-}
-
-.theme-cyan {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-}
-
-.theme-lime {
-    background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
-}
-
-.theme-orange {
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-}
-
-.theme-pink {
-    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
-}
-
-.theme-indigo {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-}
-
-.theme-gold {
-    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-}
-
-.theme-sunset {
-    background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%);
-}
-
-.theme-ocean {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
-}
-
-.theme-forest {
-    background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%);
-}
-
-.theme-berry {
-    background: linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%);
-}
-
-/* Адаптивность для модального окна тем */
-@media (max-width: 768px) {
-    .theme-palette-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .color-picker-group {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    .theme-palette-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .theme-option {
-        padding: 15px 10px;
-        font-size: 0.9em;
-    }
+.no-results h3 {
+    margin-bottom: 10px;
+    color: var(--text-dark);
 }
