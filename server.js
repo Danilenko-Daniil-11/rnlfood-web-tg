@@ -1617,6 +1617,789 @@ app.post('/api/backup', authenticateToken, requireAdmin, async (req, res) => {
     }
 });
 
+// API для получения данных о питании
+app.get('/api/nutrition', async (req, res) => {
+    try {
+        const { meal_id } = req.query;
+
+        let query = `
+            SELECT m.name, m.calories, m.proteins, m.fats, m.carbs,
+                   m.ingredients, m.allergens, m.is_vegetarian
+            FROM meals m
+            WHERE m.is_available = true
+        `;
+
+        if (meal_id) {
+            query += ` AND m.id = $1`;
+        }
+
+        const result = await pool.query(query, meal_id ? [meal_id] : []);
+
+        // Рассчитываем общую nutritional информацию
+        const nutrition = result.rows.reduce((acc, meal) => {
+            acc.total_calories += parseFloat(meal.calories || 0);
+            acc.total_proteins += parseFloat(meal.proteins || 0);
+            acc.total_fats += parseFloat(meal.fats || 0);
+            acc.total_carbs += parseFloat(meal.carbs || 0);
+            acc.meals.push({
+                name: meal.name,
+                calories: parseFloat(meal.calories || 0),
+                proteins: parseFloat(meal.proteins || 0),
+                fats: parseFloat(meal.fats || 0),
+                carbs: parseFloat(meal.carbs || 0),
+                is_vegetarian: meal.is_vegetarian
+            });
+            return acc;
+        }, {
+            total_calories: 0,
+            total_proteins: 0,
+            total_fats: 0,
+            total_carbs: 0,
+            meals: []
+        });
+
+        res.json(nutrition);
+
+    } catch (error) {
+        console.error('Error fetching nutrition data:', error);
+        res.status(500).json({ error: 'Ошибка загрузки данных о питании' });
+    }
+});
+
+// API для получения рецептов
+app.get('/api/recipes', async (req, res) => {
+    try {
+        const { meal_id, detailed = false } = req.query;
+
+        let query = `
+            SELECT m.*, mc.name as category_name,
+                   json_build_object(
+                       'ingredients', m.ingredients,
+                       'instructions', m.instructions,
+                       'prep_time', m.preparation_time,
+                       'servings', m.servings
+                   ) as recipe
+            FROM meals m
+            LEFT JOIN meal_categories mc ON m.category_id = mc.id
+            WHERE m.is_available = true
+        `;
+
+        if (meal_id) {
+            query += ` AND m.id = $1`;
+        }
+
+        const result = await pool.query(query, meal_id ? [meal_id] : []);
+
+        const recipes = result.rows.map(meal => ({
+            id: meal.id,
+            name: meal.name,
+            category: meal.category_name,
+            description: meal.description,
+            recipe: detailed ? meal.recipe : null,
+            nutritional_info: {
+                calories: parseFloat(meal.calories || 0),
+                proteins: parseFloat(meal.proteins || 0),
+                fats: parseFloat(meal.fats || 0),
+                carbs: parseFloat(meal.carbs || 0)
+            }
+        }));
+
+        res.json(recipes);
+
+    } catch (error) {
+        console.error('Error fetching recipes:', error);
+        res.status(500).json({ error: 'Ошибка загрузки рецептов' });
+    }
+});
+
+// API для получения аллергенов пользователя
+app.get('/api/allergens', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT allergens FROM profiles WHERE user_id = $1
+        `, [req.user.userId]);
+
+        const allergens = result.rows[0]?.allergens || [];
+        res.json({ allergens });
+
+    } catch (error) {
+        console.error('Error fetching allergens:', error);
+        res.status(500).json({ error: 'Ошибка загрузки аллергенов' });
+    }
+});
+
+// API для обновления аллергенов
+app.post('/api/allergens', authenticateToken, async (req, res) => {
+    try {
+        const { allergens } = req.body;
+
+        await pool.query(`
+            UPDATE profiles
+            SET allergens = $1, updated_at = NOW()
+            WHERE user_id = $2
+        `, [allergens, req.user.userId]);
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error updating allergens:', error);
+        res.status(500).json({ error: 'Ошибка обновления аллергенов' });
+    }
+});
+
+// API для проверки совместимости блюд с аллергиями
+app.post('/api/allergen-check', authenticateToken, async (req, res) => {
+    try {
+        const { meal_ids } = req.body;
+
+        // Получаем аллергены пользователя
+        const userAllergens = await pool.query(`
+            SELECT allergens FROM profiles WHERE user_id = $1
+        `, [req.user.userId]);
+
+        const allergens = userAllergens.rows[0]?.allergens || [];
+
+        if (allergens.length === 0) {
+            return res.json({ compatible: true, warnings: [] });
+        }
+
+        // Получаем аллергены блюд
+        const result = await pool.query(`
+            SELECT id, name, allergens
+            FROM meals
+            WHERE id = ANY($1)
+        `, [meal_ids]);
+
+        const warnings = [];
+        let compatible = true;
+
+        result.rows.forEach(meal => {
+            const mealAllergens = meal.allergens || [];
+            const conflicts = allergens.filter(allergen =>
+                mealAllergens.some(mealAllergen =>
+                    mealAllergen.toLowerCase().includes(allergen.toLowerCase())
+                )
+            );
+
+            if (conflicts.length > 0) {
+                compatible = false;
+                warnings.push({
+                    meal_id: meal.id,
+                    meal_name: meal.name,
+                    conflicts: conflicts
+                });
+            }
+        });
+
+        res.json({ compatible, warnings });
+
+    } catch (error) {
+        console.error('Error checking allergens:', error);
+        res.status(500).json({ error: 'Ошибка проверки аллергенов' });
+    }
+});
+
+// API для получения предпочтений пользователя
+app.get('/api/preferences', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT preferences FROM profiles WHERE user_id = $1
+        `, [req.user.userId]);
+
+        const preferences = result.rows[0]?.preferences || {
+            favorite_categories: [],
+            dietary_restrictions: [],
+            spice_level: 'medium',
+            portion_size: 'normal'
+        };
+
+        res.json({ preferences });
+
+    } catch (error) {
+        console.error('Error fetching preferences:', error);
+        res.status(500).json({ error: 'Ошибка загрузки предпочтений' });
+    }
+});
+
+// API для обновления предпочтений
+app.post('/api/preferences', authenticateToken, async (req, res) => {
+    try {
+        const { preferences } = req.body;
+
+        await pool.query(`
+            UPDATE profiles
+            SET preferences = $1, updated_at = NOW()
+            WHERE user_id = $2
+        `, [preferences, req.user.userId]);
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error updating preferences:', error);
+        res.status(500).json({ error: 'Ошибка обновления предпочтений' });
+    }
+});
+
+// API для получения персонализированного меню
+app.get('/api/personalized-menu', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        // Получаем предпочтения и аллергены пользователя
+        const userData = await pool.query(`
+            SELECT preferences, allergens FROM profiles WHERE user_id = $1
+        `, [user_id]);
+
+        const preferences = userData.rows[0]?.preferences || {};
+        const allergens = userData.rows[0]?.allergens || [];
+
+        let query = `
+            SELECT DISTINCT m.*, mc.name as category_name,
+                   CASE WHEN fm.user_id IS NOT NULL THEN true ELSE false END as is_favorite
+            FROM meals m
+            LEFT JOIN meal_categories mc ON m.category_id = mc.id
+            LEFT JOIN favorite_meals fm ON m.id = fm.meal_id AND fm.user_id = $1
+            WHERE m.is_available = true
+        `;
+
+        let params = [user_id];
+        let paramCount = 1;
+
+        // Фильтр по предпочтениям
+        if (preferences.favorite_categories && preferences.favorite_categories.length > 0) {
+            query += ` AND mc.name = ANY($${++paramCount})`;
+            params.push(preferences.favorite_categories);
+        }
+
+        if (preferences.dietary_restrictions && preferences.dietary_restrictions.length > 0) {
+            if (preferences.dietary_restrictions.includes('vegetarian')) {
+                query += ` AND m.is_vegetarian = true`;
+            }
+        }
+
+        // Исключаем блюда с аллергенами
+        if (allergens.length > 0) {
+            query += ` AND NOT EXISTS (
+                SELECT 1 FROM unnest(m.allergens) as allergen
+                WHERE allergen ILIKE ANY($${++paramCount})
+            )`;
+            params.push(allergens.map(a => `%${a}%`));
+        }
+
+        query += ` ORDER BY m.name LIMIT 50`;
+
+        const result = await pool.query(query, params);
+
+        // Группируем по категориям
+        const menu = {};
+        result.rows.forEach(meal => {
+            if (!menu[meal.category_name]) {
+                menu[meal.category_name] = [];
+            }
+            menu[meal.category_name].push({
+                id: meal.id,
+                name: meal.name,
+                price: parseFloat(meal.price),
+                description: meal.description,
+                is_favorite: meal.is_favorite,
+                nutritional_info: {
+                    calories: parseFloat(meal.calories || 0),
+                    proteins: parseFloat(meal.proteins || 0),
+                    fats: parseFloat(meal.fats || 0),
+                    carbs: parseFloat(meal.carbs || 0)
+                }
+            });
+        });
+
+        res.json({ menu, preferences, allergens });
+
+    } catch (error) {
+        console.error('Error fetching personalized menu:', error);
+        res.status(500).json({ error: 'Ошибка загрузки персонализированного меню' });
+    }
+});
+
+// API для получения статистики заказов по времени
+app.get('/api/order-stats', authenticateToken, async (req, res) => {
+    try {
+        const { period = 'week' } = req.query;
+        const user_id = req.user.userId;
+
+        let dateFilter = '';
+        switch (period) {
+            case 'day':
+                dateFilter = "AND created_at >= CURRENT_DATE";
+                break;
+            case 'week':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '7 days'";
+                break;
+            case 'month':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '30 days'";
+                break;
+            case 'year':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '365 days'";
+                break;
+        }
+
+        const result = await pool.query(`
+            SELECT
+                DATE(created_at) as date,
+                COUNT(*) as order_count,
+                SUM(final_amount) as total_spent,
+                AVG(final_amount) as avg_order_value,
+                json_agg(
+                    json_build_object(
+                        'meal_name', m.name,
+                        'quantity', oi.quantity,
+                        'total_price', oi.total_price
+                    )
+                ) as popular_items
+            FROM orders o
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            LEFT JOIN meals m ON oi.meal_id = m.id
+            WHERE o.user_id = $1 AND o.status = 'completed' ${dateFilter}
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+        `, [user_id]);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error fetching order stats:', error);
+        res.status(500).json({ error: 'Ошибка загрузки статистики заказов' });
+    }
+});
+
+// API для получения трендов питания
+app.get('/api/nutrition-trends', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        const { days = 30 } = req.query;
+
+        const result = await pool.query(`
+            SELECT
+                DATE(o.created_at) as date,
+                SUM(m.calories * oi.quantity) as total_calories,
+                SUM(m.proteins * oi.quantity) as total_proteins,
+                SUM(m.fats * oi.quantity) as total_fats,
+                SUM(m.carbs * oi.quantity) as total_carbs,
+                COUNT(DISTINCT o.id) as order_count
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN meals m ON oi.meal_id = m.id
+            WHERE o.user_id = $1 AND o.status = 'completed'
+            AND o.created_at >= CURRENT_DATE - INTERVAL '${days} days'
+            GROUP BY DATE(o.created_at)
+            ORDER BY date DESC
+        `, [user_id]);
+
+        // Рассчитываем средние значения
+        const totals = result.rows.reduce((acc, day) => {
+            acc.total_calories += parseFloat(day.total_calories || 0);
+            acc.total_proteins += parseFloat(day.total_proteins || 0);
+            acc.total_fats += parseFloat(day.total_fats || 0);
+            acc.total_carbs += parseFloat(day.total_carbs || 0);
+            acc.total_orders += parseInt(day.order_count || 0);
+            acc.days++;
+            return acc;
+        }, { total_calories: 0, total_proteins: 0, total_fats: 0, total_carbs: 0, total_orders: 0, days: 0 });
+
+        const averages = {
+            daily_calories: totals.days > 0 ? totals.total_calories / totals.days : 0,
+            daily_proteins: totals.days > 0 ? totals.total_proteins / totals.days : 0,
+            daily_fats: totals.days > 0 ? totals.total_fats / totals.days : 0,
+            daily_carbs: totals.days > 0 ? totals.total_carbs / totals.days : 0,
+            orders_per_day: totals.days > 0 ? totals.total_orders / totals.days : 0
+        };
+
+        res.json({
+            trends: result.rows,
+            averages,
+            period_days: days
+        });
+
+    } catch (error) {
+        console.error('Error fetching nutrition trends:', error);
+        res.status(500).json({ error: 'Ошибка загрузки трендов питания' });
+    }
+});
+
+// API для получения советов по питанию
+app.get('/api/nutrition-advice', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        // Получаем последние заказы и предпочтения
+        const [recentOrders, preferences] = await Promise.all([
+            pool.query(`
+                SELECT m.calories, m.proteins, m.fats, m.carbs, m.is_vegetarian
+                FROM orders o
+                JOIN order_items oi ON o.id = oi.order_id
+                JOIN meals m ON oi.meal_id = m.id
+                WHERE o.user_id = $1 AND o.status = 'completed'
+                AND o.created_at >= CURRENT_DATE - INTERVAL '7 days'
+                ORDER BY o.created_at DESC
+                LIMIT 50
+            `, [user_id]),
+
+            pool.query(`
+                SELECT preferences FROM profiles WHERE user_id = $1
+            `, [user_id])
+        ]);
+
+        const userPrefs = preferences.rows[0]?.preferences || {};
+        const meals = recentOrders.rows;
+
+        // Анализируем питание и даем советы
+        const analysis = {
+            average_daily_calories: 0,
+            protein_intake: 0,
+            carb_intake: 0,
+            fat_intake: 0,
+            vegetarian_meals_ratio: 0,
+            advice: []
+        };
+
+        if (meals.length > 0) {
+            const totals = meals.reduce((acc, meal) => {
+                acc.calories += parseFloat(meal.calories || 0);
+                acc.proteins += parseFloat(meal.proteins || 0);
+                acc.fats += parseFloat(meal.fats || 0);
+                acc.carbs += parseFloat(meal.carbs || 0);
+                if (meal.is_vegetarian) acc.vegetarian_count++;
+                return acc;
+            }, { calories: 0, proteins: 0, fats: 0, carbs: 0, vegetarian_count: 0 });
+
+            analysis.average_daily_calories = totals.calories / 7;
+            analysis.protein_intake = totals.proteins;
+            analysis.carb_intake = totals.carbs;
+            analysis.fat_intake = totals.fats;
+            analysis.vegetarian_meals_ratio = (totals.vegetarian_count / meals.length) * 100;
+
+            // Генерируем советы
+            if (analysis.average_daily_calories < 1500) {
+                analysis.advice.push("Рекомендуется увеличить калорийность рациона для поддержания энергии");
+            } else if (analysis.average_daily_calories > 3000) {
+                analysis.advice.push("Рассмотрите возможность снижения калорийности для поддержания здорового веса");
+            }
+
+            if (analysis.protein_intake < 50) {
+                analysis.advice.push("Увеличьте потребление белковой пищи для поддержания мышечной массы");
+            }
+
+            if (userPrefs.dietary_restrictions?.includes('vegetarian') && analysis.vegetarian_meals_ratio < 70) {
+                analysis.advice.push("Попробуйте больше вегетарианских блюд из нашего меню");
+            }
+
+            if (analysis.advice.length === 0) {
+                analysis.advice.push("Ваше питание выглядит сбалансированным! Продолжайте в том же духе.");
+            }
+        }
+
+        res.json(analysis);
+
+    } catch (error) {
+        console.error('Error generating nutrition advice:', error);
+        res.status(500).json({ error: 'Ошибка генерации советов по питанию' });
+    }
+});
+
+// API для получения достижений пользователя
+app.get('/api/achievements/progress', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        // Получаем статистику пользователя для расчета прогресса достижений
+        const [userStats, achievements] = await Promise.all([
+            pool.query(`
+                SELECT
+                    (SELECT COUNT(*) FROM orders WHERE user_id = $1 AND status = 'completed') as total_orders,
+                    (SELECT COUNT(*) FROM favorite_meals WHERE user_id = $1) as favorite_count,
+                    (SELECT COALESCE(SUM(final_amount), 0) FROM orders WHERE user_id = $1 AND status = 'completed') as total_spent,
+                    (SELECT COUNT(*) FROM meal_reviews WHERE user_id = $1) as review_count,
+                    (SELECT COUNT(DISTINCT DATE(created_at)) FROM orders WHERE user_id = $1 AND status = 'completed' AND created_at >= CURRENT_DATE - INTERVAL '30 days') as active_days
+                FROM users WHERE id = $1
+            `, [user_id]),
+
+            pool.query(`
+                SELECT a.*, ua.unlocked_at,
+                       CASE
+                           WHEN ua.unlocked_at IS NOT NULL THEN 100
+                           ELSE LEAST(100, (
+                               CASE a.type
+                                   WHEN 'orders' THEN (SELECT COUNT(*) FROM orders WHERE user_id = $1 AND status = 'completed') * 100.0 / a.target_value
+                                   WHEN 'spending' THEN (SELECT COALESCE(SUM(final_amount), 0) FROM orders WHERE user_id = $1 AND status = 'completed') * 100.0 / a.target_value
+                                   WHEN 'favorites' THEN (SELECT COUNT(*) FROM favorite_meals WHERE user_id = $1) * 100.0 / a.target_value
+                                   WHEN 'reviews' THEN (SELECT COUNT(*) FROM meal_reviews WHERE user_id = $1) * 100.0 / a.target_value
+                                   WHEN 'streak' THEN (SELECT COUNT(DISTINCT DATE(created_at)) FROM orders WHERE user_id = $1 AND status = 'completed' AND created_at >= CURRENT_DATE - INTERVAL '30 days') * 100.0 / a.target_value
+                                   ELSE 0
+                               END
+                           ))
+                       END as progress_percentage
+                FROM achievements a
+                LEFT JOIN user_achievements ua ON a.id = ua.achievement_id AND ua.user_id = $1
+                ORDER BY a.points_reward ASC
+            `, [user_id])
+        ]);
+
+        const stats = userStats.rows[0];
+        const achievementsWithProgress = achievements.rows.map(achievement => ({
+            ...achievement,
+            progress_percentage: Math.min(100, Math.max(0, parseFloat(achievement.progress_percentage || 0))),
+            is_completed: achievement.unlocked_at !== null,
+            current_value: achievement.type === 'orders' ? stats.total_orders :
+                          achievement.type === 'spending' ? stats.total_spent :
+                          achievement.type === 'favorites' ? stats.favorite_count :
+                          achievement.type === 'reviews' ? stats.review_count :
+                          achievement.type === 'streak' ? stats.active_days : 0
+        }));
+
+        res.json({
+            stats,
+            achievements: achievementsWithProgress
+        });
+
+    } catch (error) {
+        console.error('Error fetching achievement progress:', error);
+        res.status(500).json({ error: 'Ошибка загрузки прогресса достижений' });
+    }
+});
+
+// API для получения челленджей
+app.get('/api/challenges', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        const result = await pool.query(`
+            SELECT c.*, uc.progress, uc.completed_at,
+                   CASE
+                       WHEN uc.completed_at IS NOT NULL THEN 100
+                       WHEN c.type = 'orders' THEN LEAST(100, (SELECT COUNT(*) FROM orders WHERE user_id = $1 AND status = 'completed' AND created_at >= c.start_date) * 100.0 / c.target_value)
+                       WHEN c.type = 'calories' THEN LEAST(100, (SELECT COALESCE(SUM(m.calories * oi.quantity), 0)
+                                                               FROM orders o
+                                                               JOIN order_items oi ON o.id = oi.order_id
+                                                               JOIN meals m ON oi.meal_id = m.id
+                                                               WHERE o.user_id = $1 AND o.status = 'completed' AND o.created_at >= c.start_date) * 100.0 / c.target_value)
+                       ELSE 0
+                   END as progress_percentage
+            FROM challenges c
+            LEFT JOIN user_challenges uc ON c.id = uc.challenge_id AND uc.user_id = $1
+            WHERE c.is_active = true AND (c.end_date IS NULL OR c.end_date > NOW())
+            ORDER BY c.created_at DESC
+        `, [user_id]);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error fetching challenges:', error);
+        res.status(500).json({ error: 'Ошибка загрузки челленджей' });
+    }
+});
+
+// API для получения социальной активности
+app.get('/api/social/activity', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        const { limit = 20 } = req.query;
+
+        // Получаем активность друзей/одноклассников
+        const result = await pool.query(`
+            SELECT
+                'order' as activity_type,
+                u.username,
+                p.full_name,
+                p.class_name,
+                o.created_at as activity_date,
+                json_build_object('meal_count', COUNT(oi.id), 'total_amount', o.final_amount) as activity_data
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            JOIN profiles p ON u.id = p.user_id
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            WHERE o.status = 'completed'
+            AND p.class_name = (SELECT class_name FROM profiles WHERE user_id = $1)
+            AND o.user_id != $1
+            AND o.created_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY o.id, u.username, p.full_name, p.class_name, o.created_at, o.final_amount
+
+            UNION ALL
+
+            SELECT
+                'achievement' as activity_type,
+                u.username,
+                p.full_name,
+                p.class_name,
+                ua.unlocked_at as activity_date,
+                json_build_object('achievement_name', a.name, 'points', a.points_reward) as activity_data
+            FROM user_achievements ua
+            JOIN achievements a ON ua.achievement_id = a.id
+            JOIN users u ON ua.user_id = u.id
+            JOIN profiles p ON u.id = p.user_id
+            WHERE p.class_name = (SELECT class_name FROM profiles WHERE user_id = $1)
+            AND ua.user_id != $1
+            AND ua.unlocked_at >= CURRENT_DATE - INTERVAL '7 days'
+
+            ORDER BY activity_date DESC
+            LIMIT $2
+        `, [user_id, limit]);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error fetching social activity:', error);
+        res.status(500).json({ error: 'Ошибка загрузки социальной активности' });
+    }
+});
+
+// API для получения лидерборда
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const { type = 'orders', period = 'month', class_filter } = req.query;
+
+        let dateFilter = '';
+        switch (period) {
+            case 'week':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '7 days'";
+                break;
+            case 'month':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '30 days'";
+                break;
+            case 'year':
+                dateFilter = "AND created_at >= CURRENT_DATE - INTERVAL '365 days'";
+                break;
+            case 'all':
+                dateFilter = '';
+                break;
+        }
+
+        let classCondition = '';
+        if (class_filter) {
+            classCondition = 'AND p.class_name = $2';
+        }
+
+        let query = '';
+        switch (type) {
+            case 'orders':
+                query = `
+                    SELECT u.username, p.full_name, p.class_name,
+                           COUNT(o.id) as value,
+                           RANK() OVER (ORDER BY COUNT(o.id) DESC) as rank
+                    FROM users u
+                    JOIN profiles p ON u.id = p.user_id
+                    LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed' ${dateFilter}
+                    WHERE 1=1 ${classCondition}
+                    GROUP BY u.id, u.username, p.full_name, p.class_name
+                    ORDER BY value DESC, u.username
+                    LIMIT 50
+                `;
+                break;
+
+            case 'spending':
+                query = `
+                    SELECT u.username, p.full_name, p.class_name,
+                           COALESCE(SUM(o.final_amount), 0) as value,
+                           RANK() OVER (ORDER BY COALESCE(SUM(o.final_amount), 0) DESC) as rank
+                    FROM users u
+                    JOIN profiles p ON u.id = p.user_id
+                    LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed' ${dateFilter}
+                    WHERE 1=1 ${classCondition}
+                    GROUP BY u.id, u.username, p.full_name, p.class_name
+                    ORDER BY value DESC, u.username
+                    LIMIT 50
+                `;
+                break;
+
+            case 'achievements':
+                query = `
+                    SELECT u.username, p.full_name, p.class_name,
+                           COUNT(ua.id) as value,
+                           RANK() OVER (ORDER BY COUNT(ua.id) DESC) as rank
+                    FROM users u
+                    JOIN profiles p ON u.id = p.user_id
+                    LEFT JOIN user_achievements ua ON u.id = ua.user_id
+                    WHERE 1=1 ${classCondition}
+                    GROUP BY u.id, u.username, p.full_name, p.class_name
+                    ORDER BY value DESC, u.username
+                    LIMIT 50
+                `;
+                break;
+        }
+
+        const result = await pool.query(query, class_filter ? [class_filter] : []);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        res.status(500).json({ error: 'Ошибка загрузки лидерборда' });
+    }
+});
+
+// API для получения статистики приложения
+app.get('/api/app-stats', async (req, res) => {
+    try {
+        const cacheKey = 'app_stats';
+        const cached = cache.get(cacheKey);
+
+        if (cached) {
+            return res.json(cached);
+        }
+
+        const [
+            totalUsers,
+            totalOrders,
+            totalRevenue,
+            popularMeals,
+            categoryStats,
+            dailyStats
+        ] = await Promise.all([
+            pool.query('SELECT COUNT(*) FROM users'),
+            pool.query('SELECT COUNT(*) FROM orders WHERE status = \'completed\''),
+            pool.query('SELECT COALESCE(SUM(final_amount), 0) FROM orders WHERE status = \'completed\''),
+            pool.query(`
+                SELECT m.name, COUNT(oi.id) as order_count
+                FROM order_items oi
+                JOIN meals m ON oi.meal_id = m.id
+                GROUP BY m.id, m.name
+                ORDER BY order_count DESC
+                LIMIT 10
+            `),
+            pool.query(`
+                SELECT mc.name, COUNT(oi.id) as order_count
+                FROM order_items oi
+                JOIN meals m ON oi.meal_id = m.id
+                JOIN meal_categories mc ON m.category_id = mc.id
+                GROUP BY mc.id, mc.name
+                ORDER BY order_count DESC
+            `),
+            pool.query(`
+                SELECT DATE(created_at) as date, COUNT(*) as orders, SUM(final_amount) as revenue
+                FROM orders
+                WHERE status = 'completed' AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY DATE(created_at)
+                ORDER BY date DESC
+            `)
+        ]);
+
+        const stats = {
+            total_users: parseInt(totalUsers.rows[0].count),
+            total_orders: parseInt(totalOrders.rows[0].count),
+            total_revenue: parseFloat(totalRevenue.rows[0].total),
+            popular_meals: popularMeals.rows,
+            category_stats: categoryStats.rows,
+            daily_stats: dailyStats.rows,
+            last_updated: new Date().toISOString()
+        };
+
+        cache.set(cacheKey, stats, 300); // Кэшируем на 5 минут
+        res.json(stats);
+
+    } catch (error) {
+        console.error('Error fetching app stats:', error);
+        res.status(500).json({ error: 'Ошибка загрузки статистики приложения' });
+    }
+});
+
+
+
 // API для проверки соединения с базой
 app.get('/api/health', async (req, res) => {
     try {
