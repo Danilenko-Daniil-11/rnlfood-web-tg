@@ -218,7 +218,11 @@ app.get('/api/menu', async (req, res) => {
             ingredients: item.ingredients || [],
             allergens: item.allergens || [],
             is_vegetarian: item.is_vegetarian,
-            preparation_time: item.preparation_time
+            preparation_time: item.preparation_time,
+            calories: item.calories,
+            proteins: parseFloat(item.proteins),
+            fats: parseFloat(item.fats),
+            carbs: parseFloat(item.carbs)
         }));
         
         res.json(menu);
@@ -481,20 +485,175 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 // API для обновления профиля
 app.post('/api/update-profile', authenticateToken, async (req, res) => {
     try {
-        const { full_name, class_name, phone } = req.body;
+        const { full_name, class_name, phone, age, parents, allergens } = req.body;
         const user_id = req.user.userId;
 
         await pool.query(`
             UPDATE profiles
-            SET full_name = $1, class_name = $2, phone = $3, updated_at = NOW()
-            WHERE user_id = $4
-        `, [full_name, class_name, phone, user_id]);
+            SET full_name = $1, class_name = $2, phone = $3, age = $4, parents = $5, allergens = $6, updated_at = NOW()
+            WHERE user_id = $7
+        `, [full_name, class_name, phone, age, parents, allergens, user_id]);
 
         res.json({ success: true });
 
     } catch (error) {
         console.error('Error updating profile:', error);
         res.status(500).json({ error: 'Ошибка обновления профиля' });
+    }
+});
+
+// API для избранных блюд
+app.get('/api/favorites', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT m.*, mc.name as category_name
+            FROM favorite_meals fm
+            JOIN meals m ON fm.meal_id = m.id
+            LEFT JOIN meal_categories mc ON m.category_id = mc.id
+            WHERE fm.user_id = $1 AND m.is_available = true
+            ORDER BY fm.created_at DESC
+        `, [req.user.userId]);
+
+        const favorites = result.rows.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: parseFloat(item.price),
+            category: item.category_name,
+            description: item.description,
+            ingredients: item.ingredients || [],
+            allergens: item.allergens || [],
+            is_vegetarian: item.is_vegetarian,
+            preparation_time: item.preparation_time,
+            calories: item.calories,
+            proteins: parseFloat(item.proteins),
+            fats: parseFloat(item.fats),
+            carbs: parseFloat(item.carbs)
+        }));
+
+        res.json(favorites);
+    } catch (error) {
+        console.error('Error fetching favorites:', error);
+        res.status(500).json({ error: 'Ошибка загрузки избранного' });
+    }
+});
+
+app.post('/api/favorites/:meal_id', authenticateToken, async (req, res) => {
+    try {
+        const { meal_id } = req.params;
+        const user_id = req.user.userId;
+
+        // Проверяем существование блюда
+        const mealCheck = await pool.query('SELECT id FROM meals WHERE id = $1 AND is_available = true', [meal_id]);
+        if (mealCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Блюдо не найдено' });
+        }
+
+        // Проверяем, не добавлено ли уже
+        const existing = await pool.query('SELECT id FROM favorite_meals WHERE user_id = $1 AND meal_id = $2', [user_id, meal_id]);
+        if (existing.rows.length > 0) {
+            return res.status(400).json({ error: 'Блюдо уже в избранном' });
+        }
+
+        await pool.query('INSERT INTO favorite_meals (user_id, meal_id) VALUES ($1, $2)', [user_id, meal_id]);
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error adding favorite:', error);
+        res.status(500).json({ error: 'Ошибка добавления в избранное' });
+    }
+});
+
+app.delete('/api/favorites/:meal_id', authenticateToken, async (req, res) => {
+    try {
+        const { meal_id } = req.params;
+        const user_id = req.user.userId;
+
+        const result = await pool.query('DELETE FROM favorite_meals WHERE user_id = $1 AND meal_id = $2', [user_id, meal_id]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Блюдо не найдено в избранном' });
+        }
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error removing favorite:', error);
+        res.status(500).json({ error: 'Ошибка удаления из избранного' });
+    }
+});
+
+// API для отзывов о блюдах
+app.get('/api/meals/:id/reviews', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { limit = 10, offset = 0 } = req.query;
+
+        const result = await pool.query(`
+            SELECT mr.*, u.username, p.full_name
+            FROM meal_reviews mr
+            JOIN users u ON mr.user_id = u.id
+            JOIN profiles p ON u.id = p.user_id
+            WHERE mr.meal_id = $1
+            ORDER BY mr.created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [id, limit, offset]);
+
+        // Получаем средний рейтинг
+        const avgResult = await pool.query('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM meal_reviews WHERE meal_id = $1', [id]);
+        const avgRating = parseFloat(avgResult.rows[0].avg_rating) || 0;
+        const totalReviews = parseInt(avgResult.rows[0].total_reviews);
+
+        res.json({
+            reviews: result.rows,
+            average_rating: avgRating,
+            total_reviews: totalReviews
+        });
+
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ error: 'Ошибка загрузки отзывов' });
+    }
+});
+
+app.post('/api/reviews', authenticateToken, async (req, res) => {
+    try {
+        const { order_item_id, rating, comment } = req.body;
+        const user_id = req.user.userId;
+
+        if (!order_item_id || !rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Неверные данные отзыва' });
+        }
+
+        // Проверяем, что order_item принадлежит пользователю и заказ завершен
+        const orderCheck = await pool.query(`
+            SELECT oi.id, oi.meal_id, o.status
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            WHERE oi.id = $1 AND o.user_id = $2 AND o.status = 'completed'
+        `, [order_item_id, user_id]);
+
+        if (orderCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Нельзя оставить отзыв для этого заказа' });
+        }
+
+        const meal_id = orderCheck.rows[0].meal_id;
+
+        // Проверяем, не оставлен ли уже отзыв
+        const existing = await pool.query('SELECT id FROM meal_reviews WHERE user_id = $1 AND order_item_id = $2', [user_id, order_item_id]);
+        if (existing.rows.length > 0) {
+            return res.status(400).json({ error: 'Отзыв уже оставлен' });
+        }
+
+        const result = await pool.query(`
+            INSERT INTO meal_reviews (user_id, meal_id, order_item_id, rating, comment)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *
+        `, [user_id, meal_id, order_item_id, rating, comment]);
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error creating review:', error);
+        res.status(500).json({ error: 'Ошибка создания отзыва' });
     }
 });
 
