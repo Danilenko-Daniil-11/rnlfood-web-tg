@@ -1,22 +1,12 @@
-/**
- * RNL FOOD - УЛУЧШЕННЫЙ ТЕЛЕГРАМ БОТ v2.0
- * 10-кратное улучшение функциональности и пользовательского опыта
- */
-
 import { Telegraf, Markup, session } from 'telegraf';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import NodeCache from 'node-cache';
-import crypto from 'crypto';
 
 dotenv.config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const JWT_SECRET = process.env.JWT_SECRET || 'rnl-food-bot-secret';
-
-// Кэш для оптимизации производительности
-const cache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 минут TTL
 
 // Подключение к базе данных
 const pool = new Pool({
@@ -25,45 +15,6 @@ const pool = new Pool({
         rejectUnauthorized: false
     }
 });
-
-// Rate limiting для защиты от спама
-const userCommandLimits = new Map();
-const COMMAND_LIMIT_WINDOW = 60000; // 1 минута
-const COMMAND_LIMIT_MAX = 10; // 10 команд в минуту
-
-const checkRateLimit = (userId) => {
-    const now = Date.now();
-    const userLimits = userCommandLimits.get(userId) || [];
-
-    // Удаляем старые записи
-    const recentCommands = userLimits.filter(time => now - time < COMMAND_LIMIT_WINDOW);
-
-    if (recentCommands.length >= COMMAND_LIMIT_MAX) {
-        return false;
-    }
-
-    recentCommands.push(now);
-    userCommandLimits.set(userId, recentCommands);
-    return true;
-};
-
-// Валидация ввода
-const validateUsername = (username) => {
-    return username && username.length >= 3 && username.length <= 50 && /^[a-zA-Z0-9_]+$/.test(username);
-};
-
-const validatePassword = (password) => {
-    return password && password.length >= 6 && password.length <= 100;
-};
-
-const validateFullName = (name) => {
-    return name && name.trim().length >= 2 && name.trim().length <= 100;
-};
-
-// Логирование действий бота
-const logBotAction = (action, userId, details = {}) => {
-    console.log(`🤖 Bot ${action}: User ${userId}`, details);
-};
 
 // Сессии для хранения состояния пользователя
 bot.use(session());
@@ -93,22 +44,8 @@ bot.use((ctx, next) => {
     return next();
 });
 
-// Middleware для проверки rate limit
-bot.use(async (ctx, next) => {
-    const userId = ctx.from?.id;
-    if (userId && !checkRateLimit(userId)) {
-        logBotAction('rate_limited', userId);
-        await ctx.reply('❌ Слишком много запросов. Пожалуйста, подождите минуту.');
-        return;
-    }
-    await next();
-});
-
 // Команда /start
 bot.start(async (ctx) => {
-    const userId = ctx.from?.id;
-    logBotAction('start_command', userId);
-
     ctx.session.state = BOT_STATES.START;
     await showStartMenu(ctx);
 });
@@ -523,55 +460,35 @@ async function showMainMenu(ctx) {
 
 // Обработка ввода в главном меню
 async function handleMainMenuInput(ctx, message) {
-    const userId = ctx.from?.id;
-
-    try {
-        switch (message) {
-            case '👤 Профиль':
-                logBotAction('profile_view', userId);
-                await showProfile(ctx);
-                break;
-            case '🍽️ Ассортимент':
-                logBotAction('assortment_view', userId);
-                await showAssortment(ctx);
-                break;
-            case '🛒 Корзина':
-                logBotAction('cart_view', userId);
-                await showCart(ctx);
-                break;
-            case '📊 История заказов':
-                logBotAction('order_history_view', userId);
-                await showOrderHistory(ctx);
-                break;
-            case '💳 Пополнить баланс':
-                logBotAction('payment_methods_view', userId);
-                await showPaymentMethods(ctx);
-                break;
-            case '🎁 Промокоды':
-                logBotAction('promocodes_view', userId);
-                await showPromoCodes(ctx);
-                break;
-            case '⚙️ Админ панель':
-                if (ctx.session.user && ctx.session.user.role === 'admin') {
-                    logBotAction('admin_panel_view', userId);
-                    await showAdminPanel(ctx);
-                } else {
-                    logBotAction('unauthorized_admin_access', userId);
-                    await ctx.reply('❌ У вас нет прав доступа к админ панели.');
-                }
-                break;
-            case '🚪 Выйти':
-                logBotAction('logout', userId);
-                await logout(ctx);
-                break;
-            default:
-                logBotAction('unknown_command', userId, { command: message });
-                await ctx.reply('Пожалуйста, используйте кнопки меню для навигации.');
-        }
-    } catch (error) {
-        console.error('Error in main menu input:', error);
-        logBotAction('menu_error', userId, { error: error.message });
-        await ctx.reply('❌ Произошла ошибка. Пожалуйста, попробуйте еще раз.');
+    switch (message) {
+        case '👤 Профиль':
+            await showProfile(ctx);
+            break;
+        case '🍽️ Ассортимент':
+            await showAssortment(ctx);
+            break;
+        case '🛒 Корзина':
+            await showCart(ctx);
+            break;
+        case '📊 История заказов':
+            await showOrderHistory(ctx);
+            break;
+        case '💳 Пополнить баланс':
+            await showPaymentMethods(ctx);
+            break;
+        case '🎁 Промокоды':
+            await showPromoCodes(ctx);
+            break;
+        case '⚙️ Админ панель':
+            if (ctx.session.user && ctx.session.user.role === 'admin') {
+                await showAdminPanel(ctx);
+            }
+            break;
+        case '🚪 Выйти':
+            await logout(ctx);
+            break;
+        default:
+            await ctx.reply('Пожалуйста, используйте кнопки меню для навигации.');
     }
 }
 

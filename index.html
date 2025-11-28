@@ -3,66 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RNL FOOD - Сервис питания Ришельевского лицея</title>
-    <meta name="description" content="Официальный сервис питания Ришельевского лицея. Быстрый заказ еды без очередей, разнообразное меню, удобная оплата.">
-    <meta name="keywords" content="Ришельевский лицей, питание, заказ еды, школьная столовая, меню, обеды">
-    <meta name="author" content="Danylenko Daniil, Dmitriev Kolya">
-    <meta name="robots" content="index, follow">
-    <meta property="og:title" content="RNL FOOD - Сервис питания Ришельевского лицея">
-    <meta property="og:description" content="Быстрый заказ еды без очередей в Ришельевском лицее">
-    <meta property="og:image" content="https://rnl-food.com/images/logo.png">
-    <meta property="og:url" content="https://rnl-food.com">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="RNL FOOD - Сервис питания Ришельевского лицея">
-    <meta name="twitter:description" content="Быстрый заказ еды без очередей в Ришельевском лицее">
-    <meta name="twitter:image" content="https://rnl-food.com/images/logo.png">
-    <link rel="canonical" href="https://rnl-food.com">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+    <title>RNL FOOD - Ришельевский лицей</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <script src="script.js"></script>
-    <script>
-        // Service Worker для PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(error => console.log('SW registration failed'));
-            });
-        }
-
-        // Прогресс бар чтения
-        window.addEventListener('scroll', () => {
-            const progress = document.getElementById('reading-progress');
-            const scrollTop = window.pageYOffset;
-            const docHeight = document.body.offsetHeight - window.innerHeight;
-            const scrollPercent = (scrollTop / docHeight) * 100;
-            progress.style.width = scrollPercent + '%';
-        });
-
-        // Темная тема по умолчанию
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.body.classList.add('dark-theme');
-        }
-
-        // Доступность: фокус на первом элементе
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                document.body.classList.add('keyboard-navigation');
-            }
-        });
-
-        // Предзагрузка изображений
-        const preloadImages = ['logo.png', 'hero-bg.jpg'];
-        preloadImages.forEach(src => {
-            const img = new Image();
-            img.src = src;
-        });
-    </script>
 </head>
 <body class="light-theme">
     
@@ -1019,3 +966,4 @@
     </div>
 </body>
 </html>
+
