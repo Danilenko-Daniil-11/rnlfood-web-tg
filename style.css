@@ -981,6 +981,10 @@ body.simple-mode .btn-secondary {
         min-width: auto;
         width: 100%;
     }
+    #theme-palette-modal .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+    }
 }
 
 .profile-card {
@@ -2123,12 +2127,13 @@ body.simple-mode .btn-secondary {
 }
 
 .theme-modal-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-height: 80vh;
-    margin: 0;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
 }
 
 @keyframes scaleIn {
@@ -3230,4 +3235,31 @@ body.high-contrast .btn-secondary {
 .no-results h3 {
     margin-bottom: 10px;
     color: var(--text-dark);
+}
+
+#theme-palette-modal .modal-content {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+}
+
+
+#theme-palette-modal .modal-content {
+    animation: scaleIn 0.3s ease-out !important;
+}
+
+#theme-palette-modal .modal-body {
+    max-height: calc(80vh - 120px);
+    overflow-y: auto;
+}
+
+#theme-palette-modal .modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
 }
