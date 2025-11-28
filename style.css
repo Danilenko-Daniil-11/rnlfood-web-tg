@@ -794,16 +794,29 @@
             color: var(--primary-color);
         }
 
-        /* Исправление для кнопки регистрации */
+        /* Исправление для кнопки регистрации и входа */
         .login-btn-container {
             display: flex;
             justify-content: center;
             width: 100%;
         }
+        
+        .login-btn-container .btn-primary {
+            width: 100%;
+            justify-content: center;
+        }
 
         .register-btn {
             width: 100%;
             justify-content: center;
+        }
+        
+        /* Исправление для режима первоклашек */
+        body.simple-mode .register-btn {
+            padding: 15px 20px;
+            font-size: 1em;
+            white-space: normal;
+            height: auto;
         }
 
         /* Избранное */
@@ -868,11 +881,12 @@
 
         .profile-header h2 {
             font-family: 'Oswald', sans-serif;
-            font-weight: 800;
+            font-weight: 900;
             font-size: 1.8em;
             color: var(--text-dark);
-            letter-spacing: -0.5px;
+            letter-spacing: -1px;
             margin: 0;
+            text-transform: uppercase;
         }
 
         .balance-card {
@@ -895,7 +909,7 @@
         .balance-amount {
             font-size: 2em;
             font-weight: 700;
-            color: inherit !important;
+            color: var(--white) !important;
         }
 
         /* Аватар */
@@ -3240,3 +3254,41 @@
         .theme-pulse {
             animation: themePulse 0.5s ease;
         }
+
+        
+.form-options .checkbox-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+}
+
+.form-options .checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 3px;
+    background: var(--card-bg);
+
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+    line-height: 1 !important;
+    font-size: 12px;
+    position: relative;
+}
+
+.form-options .checkbox-container input[type="checkbox"] {
+    display: none !important;
+}
+
+.form-options .checkbox-container input:checked + .checkmark {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.form-options .checkbox-container input:checked + .checkmark::after {
+    content: "✓" !important;
+    color: white !important;
+    font-size: 12px !important;
+}
