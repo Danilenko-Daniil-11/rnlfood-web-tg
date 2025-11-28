@@ -231,6 +231,7 @@ async function apiRequest(endpoint, options = {}) {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     await initializeApp();
+    loadTheme();
 });
 
 async function initializeApp() {
@@ -419,62 +420,6 @@ function initCustomCursor() {
         cursor.style.display = 'none';
     }
 }
-
-// Сезонные эффекты (снег/листья)
-function initSeasonalEffects() {
-    const container = document.getElementById('seasonal-effects');
-    const now = new Date();
-    const month = now.getMonth();
-    
-    let effectType = '';
-    if (month >= 11 || month <= 1) effectType = 'snow'; // Зима
-    else if (month >= 8 && month <= 10) effectType = 'leaves'; // Осень
-    
-    if (effectType === 'snow') {
-        createSnowflakes(container);
-    } else if (effectType === 'leaves') {
-        createLeaves(container);
-    }
-}
-
-function createSnowflakes(container) {
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            const snowflake = document.createElement('div');
-            snowflake.className = 'snowflake';
-            snowflake.innerHTML = '❄';
-            snowflake.style.left = Math.random() * 100 + 'vw';
-            snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            snowflake.style.animationDelay = Math.random() * 5 + 's';
-            container.appendChild(snowflake);
-            
-            // Удалить после анимации
-            setTimeout(() => {
-                snowflake.remove();
-            }, 10000);
-        }, i * 200);
-    }
-}
-
-function createLeaves(container) {
-    const leaves = ['🍁', '🍂', '🥮'];
-    for (let i = 0; i < 30; i++) {
-        setTimeout(() => {
-            const leaf = document.createElement('div');
-            leaf.className = 'leaf';
-            leaf.innerHTML = leaves[Math.floor(Math.random() * leaves.length)];
-            leaf.style.left = Math.random() * 100 + 'vw';
-            leaf.style.animationDuration = (Math.random() * 5 + 3) + 's';
-            leaf.style.animationDelay = Math.random() * 8 + 's';
-            container.appendChild(leaf);
-            
-            setTimeout(() => {
-                leaf.remove();
-            }, 15000);
-        }, i * 300);
-    }
-}
-
 // Голосовое управление
 function initVoiceRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -2934,8 +2879,6 @@ document.addEventListener('keydown', function(event) {
 // Функция переключения темы
 function toggleTheme() {
     const body = document.body;
-    const themeToggle = document.getElementById('theme-toggle');
-    const icon = themeToggle.querySelector('i');
     
     if (body.classList.contains('light-theme')) {
         setTheme('dark');
@@ -2949,9 +2892,13 @@ function setTheme(theme) {
     const themeToggle = document.getElementById('theme-toggle');
     const icon = themeToggle.querySelector('i');
     
-    body.classList.remove('light-theme', 'dark-theme');
+    // Убираем все классы тем
+    body.classList.remove('light-theme', 'dark-theme', 'pixel-theme', 'high-contrast');
+    
+    // Добавляем нужный класс
     body.classList.add(theme + '-theme');
     
+    // Обновляем иконку
     if (theme === 'dark') {
         icon.className = 'fas fa-sun';
     } else {
@@ -3305,3 +3252,4 @@ const themeAnimationCSS = `
 
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
+
