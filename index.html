@@ -6,7 +6,7 @@
     <title>RNL FOOD - Ришельевский лицей</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="light-theme">
@@ -46,43 +46,6 @@
                     <button class="theme-palette-btn btn-particle" onclick="showThemePalette()">
                         <i class="fas fa-palette"></i>
                     </button>
-                    <div id="theme-palette-modal" class="modal">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3>🎨 Выбор цветовой темы</h3>
-                                <button class="modal-close btn-particle" onclick="closeModal('theme-palette-modal')">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="theme-palette-grid" id="theme-palette-grid">
-                                    <!-- Темы будут загружены через JavaScript -->
-                                </div>
-
-                                <div class="custom-theme-section">
-                                    <h4>🎨 Своя цветовая схема</h4>
-                                    <div class="color-picker-group">
-                                        <div class="color-picker">
-                                            <label>Основной цвет:</label>
-                                            <input type="color" id="custom-primary" value="#00b377">
-                                        </div>
-                                        <div class="color-picker">
-                                            <label>Вторичный цвет:</label>
-                                            <input type="color" id="custom-secondary" value="#667eea">
-                                        </div>
-                                        <div class="color-picker">
-                                            <label>Акцентный цвет:</label>
-                                            <input type="color" id="custom-accent" value="#764ba2">
-                                        </div>
-                                     </div>
-                                     <button class="btn-primary btn-particle" onclick="applyCustomTheme()">
-                                         <i class="fas fa-magic"></i>
-                                         Применить свою тему
-                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- Режим для родителей -->
                     <button class="parent-mode-btn btn-particle" id="parent-mode" onclick="toggleParentMode()">
@@ -247,7 +210,7 @@
                             Запомнить меня
                         </label>
                     </div>
-                    <div class="btn-contain">
+                    <div class="btn-contain login-btn-container">
                         <button class="btn-primary btn-particle" onclick="login()">
                             <span>ВОЙТИ В СИСТЕМУ</span>
                             <i class="fas fa-sign-in-alt"></i>
@@ -256,7 +219,7 @@
                     <div class="form-footer">
                         <p>Нет аккаунта?</p>
                         <div class="btn-contain" style="margin-top: 10px;">
-                            <button class="btn-secondary btn-particle" onclick="showRegisterModal()" style="width: 100%; justify-content: center;">
+                            <button class="btn-secondary btn-particle register-btn" onclick="showRegisterModal()">
                                 <i class="fas fa-user-plus"></i>
                                 Зарегистрироваться
                             </button>
@@ -824,22 +787,22 @@
                         <option value="7-Б">7-Б</option>
                         <option value="7-В">7-В</option>
                         <option value="7-Г">7-Г</option>
-                        <option value="8-А">8-А</option>
-                        <option value="8-Б">8-Б</option>
-                        <option value="8-В">8-В</option>
-                        <option value="8-Г">8-Г</option>
-                        <option value="9-А">9-А</option>
-                        <option value="9-Б">9-Б</option>
-                        <option value="9-В">9-В</option>
-                        <option value="9-Г">9-Г</option>
-                        <option value="10-А">10-А</option>
-                        <option value="10-Б">10-Б</option>
-                        <option value="10-В">10-В</option>
-                        <option value="10-Г">10-Г</option>
-                        <option value="11-А">11-А</option>
-                        <option value="11-Б">11-Б</option>
-                        <option value="11-В">11-В</option>
-                        <option value="11-Г">11-Г</option>
+                        <option value="8-ИКТ">8-ИКТ</option>
+                        <option value="8-ФТ">8-ФТ</option>
+                        <option value="8-ХБ">8-ХБ</option>
+                        <option value="8-Линг">8-Линг</option>
+                        <option value="9-ИКТ">9-ИКТ</option>
+                        <option value="9-ФТ">9-ФТ</option>
+                        <option value="9-ХБ">9-ХБ</option>
+                        <option value="9-Линг">9-Линг</option>
+                        <option value="10-ИКТ">10-ИКТ</option>
+                        <option value="10-ФТ">10-ФТ</option>
+                        <option value="10-ХБ">10-ХБ</option>
+                        <option value="10-Линг">10-Линг</option>
+                        <option value="11-ИКТ">11-ИКТ</option>
+                        <option value="11-ФТ">11-ФТ</option>
+                        <option value="11-ХБ">11-ХБ</option>
+                        <option value="11-Линг">11-Линг</option>
                     </select>
                     <label for="edit-grade">Класс</label>
                 </div>
@@ -917,22 +880,22 @@
                         <option value="7-Б">7-Б</option>
                         <option value="7-В">7-В</option>
                         <option value="7-Г">7-Г</option>
-                        <option value="8-А">8-А</option>
-                        <option value="8-Б">8-Б</option>
-                        <option value="8-В">8-В</option>
-                        <option value="8-Г">8-Г</option>
-                        <option value="9-А">9-А</option>
-                        <option value="9-Б">9-Б</option>
-                        <option value="9-В">9-В</option>
-                        <option value="9-Г">9-Г</option>
-                        <option value="10-А">10-А</option>
-                        <option value="10-Б">10-Б</option>
-                        <option value="10-В">10-В</option>
-                        <option value="10-Г">10-Г</option>
-                        <option value="11-А">11-А</option>
-                        <option value="11-Б">11-Б</option>
-                        <option value="11-В">11-В</option>
-                        <option value="11-Г">11-Г</option>
+                        <option value="8-ИКТ">8-ИКТ</option>
+                        <option value="8-ФТ">8-ФТ</option>
+                        <option value="8-ХБ">8-ХБ</option>
+                        <option value="8-Линг">8-Линг</option>
+                        <option value="9-ИКТ">9-ИКТ</option>
+                        <option value="9-ФТ">9-ФТ</option>
+                        <option value="9-ХБ">9-ХБ</option>
+                        <option value="9-Линг">9-Линг</option>
+                        <option value="10-ИКТ">10-ИКТ</option>
+                        <option value="10-ФТ">10-ФТ</option>
+                        <option value="10-ХБ">10-ХБ</option>
+                        <option value="10-Линг">10-Линг</option>
+                        <option value="11-ИКТ">11-ИКТ</option>
+                        <option value="11-ФТ">11-ФТ</option>
+                        <option value="11-ХБ">11-ХБ</option>
+                        <option value="11-Линг">11-Линг</option>
                     </select>
                     <label for="reg-grade">Класс</label>
                 </div>
@@ -943,6 +906,49 @@
                 </div>
                 <div class="btn-contain" style="display: inline-block;">
                     <button class="btn-primary btn-particle" onclick="register()">Зарегистрироваться</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Palette Modal -->
+    <div id="theme-palette-modal" class="modal">
+        <div class="modal-content theme-modal-content">
+            <div class="modal-header">
+                <h3>🎨 Выбор цветовой темы</h3>
+                <button class="modal-close btn-particle" onclick="closeModal('theme-palette-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="theme-palette-grid" id="theme-palette-grid">
+                    <!-- Темы будут загружены через JavaScript -->
+                </div>
+
+                <div class="custom-theme-section">
+                    <h4>🎨 Своя цветовая схема</h4>
+                    <div class="color-picker-group">
+                        <div class="color-picker">
+                            <label>Основной цвет:</label>
+                            <input type="color" id="custom-primary" value="#00b377">
+                        </div>
+                        <div class="color-picker">
+                            <label>Вторичный цвет:</label>
+                            <input type="color" id="custom-secondary" value="#667eea">
+                        </div>
+                        <div class="color-picker">
+                            <label>Акцентный цвет:</label>
+                            <input type="color" id="custom-accent" value="#764ba2">
+                        </div>
+                     </div>
+                     <button class="btn-primary btn-particle" onclick="applyCustomTheme()">
+                         <i class="fas fa-magic"></i>
+                         Применить свою тему
+                     </button>
+                     <button class="btn-secondary btn-particle" onclick="resetToDefaultTheme()" style="margin-top: 10px; width: 100%;">
+                         <i class="fas fa-undo"></i>
+                         Сбросить к стандартной теме
+                     </button>
                 </div>
             </div>
         </div>
@@ -964,10 +970,7 @@
         <p>Загрузка...</p>
     </div>
 
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
-
