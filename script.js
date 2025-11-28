@@ -20,6 +20,133 @@ let voiceRecognition = null;
 let konamiCode = [];
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
 
+// Цветовые темы
+const COLOR_THEMES = {
+    'emerald': {
+        name: 'Изумрудная',
+        primary: '#10b981',
+        primaryDark: '#059669',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+    },
+    'rose': {
+        name: 'Розовая',
+        primary: '#f43f5e',
+        primaryDark: '#e11d48',
+        secondary: '#8b5cf6',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)'
+    },
+    'amber': {
+        name: 'Янтарная',
+        primary: '#f59e0b',
+        primaryDark: '#d97706',
+        secondary: '#ec4899',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    },
+    'sky': {
+        name: 'Небесная',
+        primary: '#0ea5e9',
+        primaryDark: '#0284c7',
+        secondary: '#8b5cf6',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)'
+    },
+    'violet': {
+        name: 'Фиолетовая',
+        primary: '#8b5cf6',
+        primaryDark: '#7c3aed',
+        secondary: '#ec4899',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    },
+    'cyan': {
+        name: 'Бирюзовая',
+        primary: '#06b6d4',
+        primaryDark: '#0891b2',
+        secondary: '#8b5cf6',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+    },
+    'lime': {
+        name: 'Лаймовая',
+        primary: '#84cc16',
+        primaryDark: '#65a30d',
+        secondary: '#0ea5e9',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)'
+    },
+    'orange': {
+        name: 'Апельсиновая',
+        primary: '#f97316',
+        primaryDark: '#ea580c',
+        secondary: '#ec4899',
+        accent: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+    },
+    'pink': {
+        name: 'Розовое золото',
+        primary: '#ec4899',
+        primaryDark: '#db2777',
+        secondary: '#f59e0b',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
+    },
+    'indigo': {
+        name: 'Индиго',
+        primary: '#6366f1',
+        primaryDark: '#4f46e5',
+        secondary: '#ec4899',
+        accent: '#10b981',
+        gradient: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+    },
+    'gold': {
+        name: 'Золотая',
+        primary: '#fbbf24',
+        primaryDark: '#d97706',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        gradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)'
+    },
+    'sunset': {
+        name: 'Закатная',
+        primary: '#f97316',
+        primaryDark: '#c2410c',
+        secondary: '#ec4899',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)'
+    },
+    'ocean': {
+        name: 'Океанская',
+        primary: '#06b6d4',
+        primaryDark: '#0e7490',
+        secondary: '#3b82f6',
+        accent: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)'
+    },
+    'forest': {
+        name: 'Лесная',
+        primary: '#16a34a',
+        primaryDark: '#15803d',
+        secondary: '#65a30d',
+        accent: '#ca8a04',
+        gradient: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)'
+    },
+    'berry': {
+        name: 'Ягодная',
+        primary: '#dc2626',
+        primaryDark: '#b91c1c',
+        secondary: '#ec4899',
+        accent: '#7c3aed',
+        gradient: 'linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%)'
+    }
+};
+
+// Текущая цветовая схема
+let currentColorScheme = 'emerald';
+
 // Анимации
 function animateValue(element, start, end, duration) {
     let startTimestamp = null;
@@ -108,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function initializeApp() {
     loadTheme();
+    loadColorTheme();
     await loadUserData();
     await loadProducts();
     await initializeAssortment();
@@ -125,6 +253,7 @@ async function initializeApp() {
     initScrollProgress();
     initScrollToTop();
     initExitPopup();
+    loadAvatar();
     
     // Анимация появления элементов
     document.querySelectorAll('.screen.active .hero, .screen.active .form-container').forEach(el => {
@@ -195,6 +324,8 @@ function goTo(screenId) {
                 updateProfile();
                 loadAchievements();
                 loadCaloriesChart();
+                // Загружаем историю заказов при каждом переходе
+                setTimeout(() => loadOrderHistory(), 100);
                 break;
             case 'assortment':
                 updateCartSummary();
@@ -547,6 +678,7 @@ async function login() {
         }
         
         showNotification(`Добро пожаловать, ${username}!`, 'success');
+        createLoginAnimation();
         goTo('profile');
         
     } catch (error) {
@@ -608,6 +740,7 @@ async function register() {
         
         closeModal('register-modal');
         showNotification('Регистрация успешна!', 'success');
+        createLoginAnimation();
         goTo('profile');
         
     } catch (error) {
@@ -707,7 +840,58 @@ async function loadProducts() {
                     rating: "4.2",
                     isNew: false
                 },
-                // ... остальные продукты
+                { 
+                    id: "3", 
+                    name: "Кока-кола", 
+                    price: 15, 
+                    category: "Напитки", 
+                    icon: "fas fa-wine-bottle",
+                    calories: 139,
+                    allergens: [],
+                    isVegetarian: true,
+                    isGlutenFree: true,
+                    rating: "4.0",
+                    isNew: false
+                },
+                { 
+                    id: "4", 
+                    name: "Сок апельсиновый", 
+                    price: 12, 
+                    category: "Напитки", 
+                    icon: "fas fa-wine-glass-alt",
+                    calories: 45,
+                    allergens: [],
+                    isVegetarian: true,
+                    isGlutenFree: true,
+                    rating: "4.3",
+                    isNew: true
+                },
+                { 
+                    id: "5", 
+                    name: "Шоколадный торт", 
+                    price: 35, 
+                    category: "Десерты", 
+                    icon: "fas fa-birthday-cake",
+                    calories: 450,
+                    allergens: ['milk', 'eggs'],
+                    isVegetarian: true,
+                    isGlutenFree: false,
+                    rating: "4.8",
+                    isNew: true
+                },
+                { 
+                    id: "6", 
+                    name: "Греческий салат", 
+                    price: 28, 
+                    category: "Салаты", 
+                    icon: "fas fa-leaf",
+                    calories: 180,
+                    allergens: [],
+                    isVegetarian: true,
+                    isGlutenFree: true,
+                    rating: "4.4",
+                    isNew: false
+                }
             ];
         }
     } catch (error) {
@@ -750,12 +934,13 @@ function updateProfile() {
         balanceElement.textContent = `${newBalance} ₴`;
     }
     
-    // Подсветка нулевого баланса
+    // Цвет баланса должен меняться в зависимости от темы
+    balanceElement.style.color = '';
     if (currentUser.balance === 0) {
-        balanceElement.style.color = '#ff4757';
+        balanceElement.style.color = 'var(--primary-color)';
         balanceElement.classList.add('pulse');
     } else {
-        balanceElement.style.color = '';
+        balanceElement.style.color = 'inherit';
         balanceElement.classList.remove('pulse');
     }
     
@@ -825,6 +1010,7 @@ async function saveProfile() {
         updateProfile();
         closeModal('edit-profile-modal');
         showNotification('Профиль успешно обновлен', 'success');
+        createSuccessAnimation();
         
     } catch (error) {
         console.error('Ошибка обновления профиля:', error);
@@ -838,14 +1024,28 @@ async function saveProfile() {
 document.getElementById('avatar-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
+        // Проверка размера файла
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            showNotification('Файл слишком большой. Максимальный размер: 2MB', 'error');
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const avatarPreview = document.getElementById('avatar-preview');
-            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар">`;
+            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
             
-            // Сохраняем в localStorage
-            localStorage.setItem('avatar', e.target.result);
+            // Сохраняем в localStorage для текущего пользователя
+            if (currentUser) {
+                currentUser.avatar = e.target.result;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            localStorage.setItem(`avatar_${currentUser?.username}`, e.target.result);
+            
             showNotification('Аватар успешно обновлен', 'success');
+        };
+        reader.onerror = function() {
+            showNotification('Ошибка загрузки изображения', 'error');
         };
         reader.readAsDataURL(file);
     }
@@ -853,10 +1053,15 @@ document.getElementById('avatar-input').addEventListener('change', function(e) {
 
 // Загрузка аватара при инициализации
 function loadAvatar() {
-    const savedAvatar = localStorage.getItem('avatar');
+    if (!currentUser) return;
+    
+    // Пробуем сначала получить аватар для текущего пользователя
+    const userAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
+    const savedAvatar = userAvatar || localStorage.getItem('avatar');
+    
     if (savedAvatar) {
         const avatarPreview = document.getElementById('avatar-preview');
-        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар">`;
+        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
     }
 }
 
@@ -936,14 +1141,20 @@ function showAchievementNotification(achievement) {
 
 // Диаграмма калорий
 function loadCaloriesChart() {
-    const ctx = document.getElementById('caloriesChart').getContext('2d');
+    const ctx = document.getElementById('caloriesChart');
+    if (!ctx) return;
     
-    // Пример данных за неделю
+    const ctx2d = ctx.getContext('2d');
+    if (!ctx2d) return;
+    
+    // Проверяем есть ли данные о заказах
+    const hasOrderData = currentUser && currentUser.orders && currentUser.orders.length > 0;
+    
     const data = {
         labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
         datasets: [{
             label: 'Калории',
-            data: [1200, 1900, 1500, 2100, 1800, 2300, 1600],
+            data: hasOrderData ? [1200, 1900, 1500, 2100, 1800, 2300, 1600] : [0, 0, 0, 0, 0, 0, 0],
             backgroundColor: 'rgba(0, 179, 119, 0.2)',
             borderColor: 'rgba(0, 179, 119, 1)',
             borderWidth: 2,
@@ -951,19 +1162,33 @@ function loadCaloriesChart() {
         }]
     };
     
-    new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
+    try {
+        new Chart(ctx2d, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: hasOrderData ? undefined : 1000
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: !hasOrderData,
+                        text: 'Нет данных о заказах'
+                    }
                 }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Ошибка создания графика:', error);
+    }
 }
 
 // Избранное
@@ -1189,20 +1414,24 @@ function addMultipleToCart(productId, quantity) {
 // Фильтрация и поиск
 function filterProducts() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
-    const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
-    const isVegetarian = document.getElementById('filter-vegetarian').checked;
-    const isGlutenFree = document.getElementById('filter-gluten-free').checked;
-    const maxPrice = parseInt(document.getElementById('price-slider').value);
+    const activeCategory = document.querySelector('.category-btn.active')?.getAttribute('data-category') || 'all';
+    const isVegetarian = document.getElementById('filter-vegetarian')?.checked || false;
+    const isGlutenFree = document.getElementById('filter-gluten-free')?.checked || false;
+    const maxPrice = parseInt(document.getElementById('price-slider')?.value || 150);
     
     const container = document.getElementById('items-container');
+    if (!container) return;
+    
     const allItems = container.querySelectorAll('.item-card');
     
+    let visibleItems = 0;
+    
     allItems.forEach((item, index) => {
-        const itemName = item.querySelector('.item-name').textContent.toLowerCase();
-        const itemCategory = item.getAttribute('data-category');
+        const itemName = item.querySelector('.item-name')?.textContent.toLowerCase() || '';
+        const itemCategory = item.getAttribute('data-category') || '';
         const itemVegetarian = item.getAttribute('data-vegetarian') === 'true';
         const itemGlutenFree = item.getAttribute('data-gluten-free') === 'true';
-        const itemPrice = parseFloat(item.getAttribute('data-price'));
+        const itemPrice = parseFloat(item.getAttribute('data-price')) || 0;
         
         const matchesSearch = itemName.includes(searchTerm);
         const matchesCategory = activeCategory === 'all' || itemCategory === activeCategory;
@@ -1212,6 +1441,7 @@ function filterProducts() {
         
         if (matchesSearch && matchesCategory && matchesVegetarian && matchesGlutenFree && matchesPrice) {
             item.style.display = 'block';
+            visibleItems++;
             setTimeout(() => {
                 slideIn(item, 'up');
             }, index * 50);
@@ -1220,7 +1450,22 @@ function filterProducts() {
         }
     });
     
-    // Подсветка найденного текста
+    // Показываем сообщение если ничего не найдено
+    const noResults = document.getElementById('no-results-message');
+    if (!noResults && visibleItems === 0 && container.children.length > 0) {
+        const message = document.createElement('div');
+        message.id = 'no-results-message';
+        message.className = 'no-results';
+        message.innerHTML = `
+            <i class="fas fa-search"></i>
+            <h3>Ничего не найдено</h3>
+            <p>Попробуйте изменить параметры поиска или фильтры</p>
+        `;
+        container.appendChild(message);
+    } else if (noResults && visibleItems > 0) {
+        noResults.remove();
+    }
+    
     highlightSearchText(searchTerm);
 }
 
@@ -1621,6 +1866,7 @@ async function applyPromo() {
         }, 2000);
         
         showNotification(`Промокод "${promoCode}" применен! Скидка ${discountPercent}%`, 'success');
+        createPromoAnimation();
         
     } catch (error) {
         console.error('Ошибка применения промокода:', error);
@@ -1768,6 +2014,7 @@ async function placeOrder() {
         
         // Запускаем конфетти
         startConfetti();
+        createConfettiAnimation();
         
         // Очищаем корзину
         clearCart();
@@ -1843,6 +2090,91 @@ function startConfetti() {
     setTimeout(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }, 5000);
+}
+
+// Анимации "хлопушки"
+function createConfettiAnimation() {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti-animation';
+    confetti.innerHTML = '🎉';
+    confetti.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4em;
+        z-index: 10000;
+        pointer-events: none;
+        animation: confettiPop 1s ease-out forwards;
+    `;
+    document.body.appendChild(confetti);
+    
+    setTimeout(() => {
+        confetti.remove();
+    }, 1000);
+}
+
+function createSuccessAnimation() {
+    const success = document.createElement('div');
+    success.className = 'confetti-animation';
+    success.innerHTML = '✅';
+    success.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4em;
+        z-index: 10000;
+        pointer-events: none;
+        animation: confettiPop 1s ease-out forwards;
+    `;
+    document.body.appendChild(success);
+    
+    setTimeout(() => {
+        success.remove();
+    }, 1000);
+}
+
+function createLoginAnimation() {
+    const login = document.createElement('div');
+    login.className = 'confetti-animation';
+    login.innerHTML = '👋';
+    login.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4em;
+        z-index: 10000;
+        pointer-events: none;
+        animation: confettiPop 1s ease-out forwards;
+    `;
+    document.body.appendChild(login);
+    
+    setTimeout(() => {
+        login.remove();
+    }, 1000);
+}
+
+function createPromoAnimation() {
+    const promo = document.createElement('div');
+    promo.className = 'confetti-animation';
+    promo.innerHTML = '🎁';
+    promo.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4em;
+        z-index: 10000;
+        pointer-events: none;
+        animation: confettiPop 1s ease-out forwards;
+    `;
+    document.body.appendChild(promo);
+    
+    setTimeout(() => {
+        promo.remove();
+    }, 1000);
 }
 
 // Прогресс-бар готовности заказа
@@ -2755,133 +3087,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Цветовые темы
-const COLOR_THEMES = {
-    'emerald': {
-        name: 'Изумрудная',
-        primary: '#10b981',
-        primaryDark: '#059669',
-        secondary: '#8b5cf6',
-        accent: '#ec4899',
-        gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-    },
-    'rose': {
-        name: 'Розовая',
-        primary: '#f43f5e',
-        primaryDark: '#e11d48',
-        secondary: '#8b5cf6',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)'
-    },
-    'amber': {
-        name: 'Янтарная',
-        primary: '#f59e0b',
-        primaryDark: '#d97706',
-        secondary: '#ec4899',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-    },
-    'sky': {
-        name: 'Небесная',
-        primary: '#0ea5e9',
-        primaryDark: '#0284c7',
-        secondary: '#8b5cf6',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)'
-    },
-    'violet': {
-        name: 'Фиолетовая',
-        primary: '#8b5cf6',
-        primaryDark: '#7c3aed',
-        secondary: '#ec4899',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
-    },
-    'cyan': {
-        name: 'Бирюзовая',
-        primary: '#06b6d4',
-        primaryDark: '#0891b2',
-        secondary: '#8b5cf6',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
-    },
-    'lime': {
-        name: 'Лаймовая',
-        primary: '#84cc16',
-        primaryDark: '#65a30d',
-        secondary: '#0ea5e9',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)'
-    },
-    'orange': {
-        name: 'Апельсиновая',
-        primary: '#f97316',
-        primaryDark: '#ea580c',
-        secondary: '#ec4899',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
-    },
-    'pink': {
-        name: 'Розовое золото',
-        primary: '#ec4899',
-        primaryDark: '#db2777',
-        secondary: '#f59e0b',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
-    },
-    'indigo': {
-        name: 'Индиго',
-        primary: '#6366f1',
-        primaryDark: '#4f46e5',
-        secondary: '#ec4899',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-    },
-    'gold': {
-        name: 'Золотая',
-        primary: '#fbbf24',
-        primaryDark: '#d97706',
-        secondary: '#8b5cf6',
-        accent: '#ec4899',
-        gradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)'
-    },
-    'sunset': {
-        name: 'Закатная',
-        primary: '#f97316',
-        primaryDark: '#c2410c',
-        secondary: '#ec4899',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)'
-    },
-    'ocean': {
-        name: 'Океанская',
-        primary: '#06b6d4',
-        primaryDark: '#0e7490',
-        secondary: '#3b82f6',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)'
-    },
-    'forest': {
-        name: 'Лесная',
-        primary: '#16a34a',
-        primaryDark: '#15803d',
-        secondary: '#65a30d',
-        accent: '#ca8a04',
-        gradient: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)'
-    },
-    'berry': {
-        name: 'Ягодная',
-        primary: '#dc2626',
-        primaryDark: '#b91c1c',
-        secondary: '#ec4899',
-        accent: '#7c3aed',
-        gradient: 'linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%)'
-    }
-};
-
-// Текущая цветовая схема
-let currentColorScheme = 'emerald';
-
 // Функция показа палитры тем
 function showThemePalette() {
     const grid = document.getElementById('theme-palette-grid');
@@ -3061,6 +3266,18 @@ function animateThemeChange() {
     }, 1000);
 }
 
+// Функция сброса темы к стандартной
+function resetToDefaultTheme() {
+    localStorage.removeItem('colorTheme');
+    localStorage.removeItem('customTheme');
+    localStorage.removeItem('customPrimary');
+    localStorage.removeItem('customSecondary');
+    localStorage.removeItem('customAccent');
+    
+    applyColorTheme('emerald');
+    showNotification('Тема сброшена к стандартной!', 'info');
+}
+
 // CSS для анимации смены темы
 const themeAnimationCSS = `
 <style>
@@ -3088,90 +3305,3 @@ const themeAnimationCSS = `
 
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
-
-// Инициализация темы при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    loadColorTheme();
-});
-
-// Функция сброса темы к стандартной
-function resetToDefaultTheme() {
-    localStorage.removeItem('colorTheme');
-    localStorage.removeItem('customTheme');
-    localStorage.removeItem('customPrimary');
-    localStorage.removeItem('customSecondary');
-    localStorage.removeItem('customAccent');
-    
-    applyColorTheme('emerald');
-    showNotification('Тема сброшена к стандартной!', 'info');
-}
-
-// Добавляем кнопку сброса в модальное окно
-function addResetButtonToPalette() {
-    const modalBody = document.querySelector('#theme-palette-modal .modal-body');
-    const resetButton = document.createElement('button');
-    resetButton.className = 'btn-secondary btn-particle';
-    resetButton.style.marginTop = '15px';
-    resetButton.style.width = '100%';
-    resetButton.innerHTML = '<i class="fas fa-undo"></i> Сбросить к стандартной теме';
-    resetButton.onclick = resetToDefaultTheme;
-    modalBody.appendChild(resetButton);
-}
-
-// Вызываем при инициализации
-addResetButtonToPalette();
-
-// Функция для быстрой смены темы через консоль (для разработки)
-function debugChangeTheme(themeName) {
-    if (COLOR_THEMES[themeName]) {
-        applyColorTheme(themeName);
-    } else {
-        console.log('Доступные темы:', Object.keys(COLOR_THEMES).join(', '));
-    }
-}
-
-// Автоматическая смена темы по времени суток
-function initAutoThemeByTime() {
-    const hour = new Date().getHours();
-    const autoThemeEnabled = localStorage.getItem('autoTheme') === 'true';
-    
-    if (!autoThemeEnabled) return;
-    
-    let theme;
-    if (hour >= 6 && hour < 12) {
-        theme = 'sky'; // Утро
-    } else if (hour >= 12 && hour < 18) {
-        theme = 'emerald'; // День
-    } else if (hour >= 18 && hour < 22) {
-        theme = 'amber'; // Вечер
-    } else {
-        theme = 'violet'; // Ночь
-    }
-    
-    if (currentColorScheme !== theme) {
-        applyColorTheme(theme);
-        showNotification(`Авто-тема: ${COLOR_THEMES[theme].name}`, 'info');
-    }
-}
-
-// Включение/выключение авто-темы
-function toggleAutoTheme() {
-    const autoThemeEnabled = localStorage.getItem('autoTheme') === 'true';
-    localStorage.setItem('autoTheme', (!autoThemeEnabled).toString());
-    
-    showNotification(
-        autoThemeEnabled ? 'Авто-тема выключена' : 'Авто-тема включена',
-        'success'
-    );
-    
-    if (!autoThemeEnabled) {
-        initAutoThemeByTime();
-    }
-}
-
-// Добавляем в инициализацию
-setInterval(initAutoThemeByTime, 600000); // Проверка каждые 10 минут
-
-// Инициализация всех улучшений
-loadAvatar();
-
