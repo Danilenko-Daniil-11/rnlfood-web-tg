@@ -399,28 +399,6 @@ function initSwipeNavigation() {
     }
 }
 
-// Кастомный курсор
-function initCustomCursor() {
-    const cursor = document.getElementById('custom-cursor');
-    
-    document.addEventListener('mousemove', e => {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
-    });
-    
-    document.addEventListener('mousedown', () => {
-        cursor.style.transform = 'scale(0.8)';
-    });
-    
-    document.addEventListener('mouseup', () => {
-        cursor.style.transform = 'scale(1)';
-    });
-    
-    // Скрыть курсор на мобильных устройствах
-    if ('ontouchstart' in window) {
-        cursor.style.display = 'none';
-    }
-}
 // Голосовое управление
 function initVoiceRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -1088,6 +1066,11 @@ function showAchievementNotification(achievement) {
 // Диаграмма калорий
 function loadCaloriesChart() {
     const ctx = document.getElementById('caloriesChart');
+    if (!ctx) {
+        console.warn('Calories chart canvas not found');
+        return;
+    }
+
     if (!ctx) return;
     
     const ctx2d = ctx.getContext('2d');
@@ -1980,8 +1963,26 @@ async function placeOrder() {
 
 // Конфетти
 function startConfetti() {
-    const canvas = document.getElementById('confetti-canvas');
+    // Создаем canvas элемент если его нет
+    let canvas = document.getElementById('confetti-canvas');
+    if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = 'confetti-canvas';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '10000';
+        document.body.appendChild(canvas);
+    }
+    
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.warn('Canvas context not available');
+        return;
+    }
     
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -2035,8 +2036,15 @@ function startConfetti() {
     // Очистка через 5 секунд
     setTimeout(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Удаляем canvas после анимации
+        setTimeout(() => {
+            if (canvas && canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
+        }, 1000);
     }, 5000);
 }
+
 
 // Анимации "хлопушки"
 function createConfettiAnimation() {
