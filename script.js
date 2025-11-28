@@ -231,6 +231,7 @@ async function apiRequest(endpoint, options = {}) {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     await initializeApp();
+    refreshThemeColors();
     loadTheme();
 });
 
@@ -2906,6 +2907,13 @@ function setTheme(theme) {
     }
     
     localStorage.setItem('theme', theme);
+    
+    // Принудительно применяем цветовую схему после смены темы
+    setTimeout(() => {
+        if (currentColorScheme) {
+            applyColorTheme(currentColorScheme);
+        }
+    }, 100);
 }
 
 // Загрузка темы при загрузке страницы
@@ -3079,7 +3087,10 @@ function applyColorTheme(themeKey) {
     document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.remove('active');
     });
-    document.querySelector(`.theme-option[data-theme="${themeKey}"]`).classList.add('active');
+    const activeOption = document.querySelector(`.theme-option[data-theme="${themeKey}"]`);
+    if (activeOption) {
+        activeOption.classList.add('active');
+    }
     
     // Сохраняем в localStorage
     localStorage.setItem('colorTheme', themeKey);
@@ -3253,3 +3264,8 @@ const themeAnimationCSS = `
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
 
+function refreshThemeColors() {
+    if (currentColorScheme) {
+        applyColorTheme(currentColorScheme);
+    }
+}
