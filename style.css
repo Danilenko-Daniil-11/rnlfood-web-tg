@@ -3343,17 +3343,18 @@
                 var(--accent-color),
                 var(--primary-color));
             background-size: 400% 400%;
-            animation: morphGradient 20s ease-in-out infinite;
-            opacity: 0.05;
+            animation: morphGradient 15s ease-in-out infinite;
+            opacity: 0.08;
             pointer-events: none;
             z-index: -1;
         }
 
         @keyframes morphGradient {
-            0%, 100% { background-position: 0% 50%; }
+            0% { background-position: 0% 50%; }
             25% { background-position: 100% 50%; }
             50% { background-position: 100% 100%; }
             75% { background-position: 0% 100%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* Улучшенные анимации кнопок */
@@ -3519,13 +3520,15 @@
             text-align: center;
             font-weight: 600;
             color: var(--text-dark);
-            background: var(--background);
+            background: var(--card-bg);
             border: 2px solid var(--border);
+            box-shadow: var(--shadow);
         }
 
         .theme-option:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-color: var(--primary-color);
         }
 
         .theme-option.active {
@@ -3563,6 +3566,7 @@
             height: 20px;
             border-radius: 50%;
             border: 2px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         /* Секция пользовательской темы */

@@ -19,6 +19,10 @@ let isHighContrast = false;
 let voiceRecognition = null;
 let konamiCode = [];
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+let currentWeekStart = new Date();
+let mealPlan = {};
+
+
 
 // Цветовые темы
 const COLOR_THEMES = {
@@ -619,11 +623,17 @@ function initExitPopup() {
 }
 
 function showExitConfirm() {
-    document.getElementById('exit-popup').classList.add('active');
+    const exitPopup = document.getElementById('exit-popup');
+    if (exitPopup) {
+        exitPopup.classList.add('active');
+    }
 }
 
 function hideExitPopup() {
-    document.getElementById('exit-popup').classList.remove('active');
+    const exitPopup = document.getElementById('exit-popup');
+    if (exitPopup) {
+        exitPopup.classList.remove('active');
+    }
 }
 
 // Проверка авторизации
@@ -1062,14 +1072,24 @@ if (avatarInput) {
 // Загрузка аватара при инициализации
 function loadAvatar() {
     if (!currentUser) return;
-    
+
     // Пробуем сначала получить аватар для текущего пользователя
     const userAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
     const savedAvatar = userAvatar || localStorage.getItem('avatar');
-    
+
+    const avatarPreview = document.getElementById('avatar-preview');
+    if (!avatarPreview) return;
+
     if (savedAvatar) {
-        const avatarPreview = document.getElementById('avatar-preview');
-        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">`;
+        // Добавляем fallback на случай ошибки загрузки
+        const fallbackIcon = document.createElement('i');
+        fallbackIcon.className = 'fas fa-user';
+        fallbackIcon.style.display = 'none';
+        avatarPreview.appendChild(fallbackIcon);
+    } else {
+        // Показываем стандартную иконку
+        avatarPreview.innerHTML = '<i class="fas fa-user"></i>';
     }
 }
 
@@ -3290,8 +3310,6 @@ function resetToDefaultTheme() {
 }
 
 // Планировщик питания
-let currentWeekStart = new Date();
-let mealPlan = {}; // { '2025-01-01': { breakfast: productId, lunch: productId, dinner: productId } }
 
 // Инициализация планировщика питания
 function initializeMealPlanner() {
@@ -3305,6 +3323,25 @@ function initializeMealPlanner() {
     updateWeeklyCalendar();
     updateWeeklyStats();
     loadMealPlan();
+
+    // Добавляем обработчики событий для кнопок навигации
+    const prevBtn = document.querySelector('.week-navigation button:first-child');
+    const nextBtn = document.querySelector('.week-navigation button:last-child');
+
+    if (prevBtn) prevBtn.onclick = previousWeek;
+    if (nextBtn) nextBtn.onclick = nextWeek;
+
+    // Добавляем обработчик для кнопки генерации плана
+    const generateBtn = document.querySelector('.planner-actions button:first-child');
+    if (generateBtn) generateBtn.onclick = generateMealPlan;
+
+    // Добавляем обработчик для кнопки очистки плана
+    const clearBtn = document.querySelector('.planner-actions button:last-child');
+    if (clearBtn) clearBtn.onclick = clearMealPlan;
+
+    // Добавляем обработчик для кнопки заказа недельного плана
+    const orderBtn = document.querySelector('.summary-actions button');
+    if (orderBtn) orderBtn.onclick = orderWeeklyPlan;
 }
 
 // Загрузка плана питания из localStorage
@@ -3725,7 +3762,10 @@ function updateWeeklyStats() {
 
 // Инициализация планировщика при переходе на страницу
 function initMealPlannerPage() {
-    initializeMealPlanner();
+    // Убедимся, что все элементы существуют перед инициализацией
+    setTimeout(() => {
+        initializeMealPlanner();
+    }, 100);
 }
 
 // CSS для анимации смены темы
