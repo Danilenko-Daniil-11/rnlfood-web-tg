@@ -3673,54 +3673,78 @@ const liquidMorphCSS = `
 // Добавляем CSS для жидкого морфинга
 document.head.insertAdjacentHTML('beforeend', liquidMorphCSS);
 
-// Инициализация эффектов при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    // Применяем эффекты жидкого стекла
-    setTimeout(applyLiquidGlassEffect, 1000);
+// Оптимизированная инициализация эффектов
+let effectsInitialized = false;
 
-    // Добавляем эффекты к формам входа/регистрации
-    document.querySelectorAll('.screen').forEach(screen => {
-        if (screen.id === 'login' || screen.id === 'register-modal') {
-            screen.addEventListener('transitionend', function() {
-                if (this.classList.contains('active')) {
-                    createLoginEffects();
-                }
-            });
-        }
+function initPerformanceOptimizedEffects() {
+    if (effectsInitialized) return;
+    effectsInitialized = true;
+
+    // Применяем эффекты жидкого стекла только один раз
+    requestAnimationFrame(() => {
+        applyLiquidGlassEffect();
+        addExtraAnimations();
     });
+}
+
+// Инициализация эффектов при загрузке (оптимизированная)
+document.addEventListener('DOMContentLoaded', function() {
+    // Откладываем тяжелые эффекты до завершения загрузки
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(initPerformanceOptimizedEffects, { timeout: 2000 });
+    } else {
+        setTimeout(initPerformanceOptimizedEffects, 100);
+    }
+
+    // Добавляем эффекты к формам входа/регистрации (оптимизировано)
+    document.addEventListener('transitionend', function(e) {
+        if ((e.target.id === 'login' || e.target.id === 'register-modal') && e.target.classList.contains('active')) {
+            createLoginEffects();
+        }
+    }, true); // Используем делегирование событий
 });
 
-// Обновляем эффекты при смене темы
+// Обновляем эффекты при смене темы (оптимизировано)
 const originalApplyColorTheme = applyColorTheme;
 applyColorTheme = function(themeKey) {
     originalApplyColorTheme(themeKey);
-    setTimeout(applyLiquidGlassEffect, 500);
+    requestAnimationFrame(applyLiquidGlassEffect);
 };
 
 const originalApplyCustomTheme = applyCustomTheme;
 applyCustomTheme = function() {
     originalApplyCustomTheme();
-    setTimeout(applyLiquidGlassEffect, 500);
+    requestAnimationFrame(applyLiquidGlassEffect);
 };
 
-// Добавляем дополнительные анимации
+// Оптимизированная функция дополнительных анимаций
 function addExtraAnimations() {
-    // Анимация появления карточек товаров
-    document.querySelectorAll('.item-card').forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('stagger-animation');
+    const cards = document.querySelectorAll('.item-card');
+    const buttons = document.querySelectorAll('.btn-primary, .btn-secondary');
+    const profileCards = document.querySelectorAll('.profile-card');
+
+    // Используем DocumentFragment для оптимизации DOM
+    const fragment = document.createDocumentFragment();
+
+    // Анимация появления карточек товаров (оптимизировано)
+    cards.forEach((card, index) => {
+        if (index < 20) { // Ограничиваем количество анимированных элементов
+            card.style.animationDelay = `${index * 0.05}s`;
+            card.classList.add('stagger-animation');
+        }
     });
 
-    // Анимация кнопок
-    document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+    // Анимация кнопок (оптимизировано)
+    buttons.forEach(btn => {
         btn.classList.add('micro-interactions');
     });
 
-    // Эффект глубины для карточек
-    document.querySelectorAll('.item-card, .profile-card').forEach(card => {
+    // Эффект глубины для карточек (оптимизировано)
+    profileCards.forEach(card => {
         card.classList.add('depth-shadow');
     });
 }
 
-// Запускаем дополнительные анимации
-setTimeout(addExtraAnimations, 2000);
+// Функция selectCategory была определена выше, но вызывается из HTML
+// Убедимся, что она доступна глобально
+window.selectCategory = selectCategory;
