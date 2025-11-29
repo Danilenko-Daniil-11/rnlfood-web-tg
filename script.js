@@ -1094,17 +1094,17 @@ function loadAvatar() {
 function loadAchievements() {
     const container = document.getElementById('achievements-container');
     if (!container) return;
-    
+
     const achievementList = [
-        { id: 'first_order', name: 'Первый заказ', icon: 'medal', description: 'Сделайте первый заказ' },
-        { id: 'foodie', name: 'Гурман', icon: 'pizza', description: 'Попробуйте 10 разных блюд' },
-        { id: 'regular', name: 'Постоянный клиент', icon: 'star', description: 'Сделайте 20 заказов' },
-        { id: 'healthy', name: 'Здоровое питание', icon: 'salad', description: 'Закажите 5 салатов' },
-        { id: 'sweet_tooth', name: 'Сладкоежка', icon: 'cake', description: 'Попробуйте все десерты' }
+        { id: 'first_order', name: 'Первый заказ', icon: '🏆', description: 'Сделайте первый заказ' },
+        { id: 'foodie', name: 'Гурман', icon: '🍕', description: 'Попробуйте 10 разных блюд' },
+        { id: 'regular', name: 'Постоянный клиент', icon: '⭐', description: 'Сделайте 20 заказов' },
+        { id: 'healthy', name: 'Здоровое питание', icon: '🥗', description: 'Закажите 5 салатов' },
+        { id: 'sweet_tooth', name: 'Сладкоежка', icon: '🍰', description: 'Попробуйте все десерты' }
     ];
-    
+
     container.innerHTML = '';
-    
+
     achievementList.forEach(achievement => {
         const isUnlocked = achievements.includes(achievement.id);
         const achievementElement = document.createElement('div');
@@ -1113,11 +1113,11 @@ function loadAchievements() {
             <div class="achievement-icon">${achievement.icon}</div>
             <div class="achievement-name">${achievement.name}</div>
         `;
-        
+
         if (isUnlocked) {
             achievementElement.title = achievement.description;
         }
-        
+
         container.appendChild(achievementElement);
     });
 }
@@ -1304,88 +1304,91 @@ function updateFavoriteButton(productId) {
 function initializeAssortment() {
     const container = document.getElementById('items-container');
     if (!container) return;
-    
-    // Показываем скелетоны загрузки
+
+    // Очищаем контейнер и показываем скелетоны загрузки
     container.innerHTML = '';
     for (let i = 0; i < 8; i++) {
         const skeleton = document.createElement('div');
         skeleton.className = 'item-card skeleton skeleton-item';
         container.appendChild(skeleton);
     }
-    
-    // Загружаем продукты с задержкой для демонстрации
+
+    // Загружаем продукты сразу без задержки
     setTimeout(() => {
         container.innerHTML = '';
-        
+
+        if (products.length === 0) {
+            container.innerHTML = '<div class="no-results"><i class="fas fa-utensils"></i><h3>Меню временно недоступно</h3><p>Попробуйте зайти позже</p></div>';
+            return;
+        }
+
         products.forEach((product, index) => {
-            setTimeout(() => {
-                const quantity = cart[product.id] || 0;
-                const isFavorite = favorites.has(product.id);
-                
-                const itemCard = document.createElement('div');
-                itemCard.className = 'item-card';
-                itemCard.setAttribute('data-category', product.category);
-                itemCard.setAttribute('data-vegetarian', product.isVegetarian);
-                itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
-                itemCard.setAttribute('data-price', product.price);
-                itemCard.setAttribute('data-calories', product.calories);
-                
-                itemCard.innerHTML = `
-                    ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
-                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
-                            data-product="${product.id}" 
-                            onclick="toggleFavorite('${product.id}')">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                    <div class="item-image">
-                        <i class="${product.icon}"></i>
-                    </div>
-                    <div class="item-name">${product.name}</div>
-                    <div class="item-description">${product.description || ''}</div>
-                    
-                    <!-- Аллергены -->
-                    <div class="allergens">
-                        ${product.allergens.map(allergen => `
-                            <div class="allergen ${allergen}" title="${getAllergenName(allergen)}">
-                                <i class="fas fa-exclamation-circle"></i>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <!-- Рейтинг -->
-                    <div class="rating">
-                        ${generateStarRating(product.rating)}
-                    </div>
-                    
-                    <div class="item-price">${product.price} ₴</div>
-                    <div class="item-calories">${product.calories} ккал</div>
-                    <div class="item-actions">
-                        <div class="quantity-controls">
-                            <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <span class="quantity" id="quantity-${product.id}">${quantity}</span>
-                            <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
-                                <i class="fas fa-plus"></i>
-                            </button>
+            const quantity = cart[product.id] || 0;
+            const isFavorite = favorites.has(product.id);
+
+            const itemCard = document.createElement('div');
+            itemCard.className = 'item-card';
+            itemCard.setAttribute('data-category', product.category);
+            itemCard.setAttribute('data-vegetarian', product.isVegetarian);
+            itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
+            itemCard.setAttribute('data-price', product.price);
+            itemCard.setAttribute('data-calories', product.calories);
+
+            itemCard.innerHTML = `
+                ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}"
+                        data-product="${product.id}"
+                        onclick="toggleFavorite('${product.id}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <div class="item-image">
+                    <i class="${product.icon}"></i>
+                </div>
+                <div class="item-name">${product.name}</div>
+                <div class="item-description">${product.description || ''}</div>
+
+                <!-- Аллергены -->
+                <div class="allergens">
+                    ${product.allergens && product.allergens.length > 0 ? product.allergens.map(allergen => `
+                        <div class="allergen ${allergen}" title="${getAllergenName(allergen)}">
+                            <i class="fas fa-exclamation-circle"></i>
                         </div>
-                        <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
-                            <i class="fas fa-cart-plus"></i>
+                    `).join('') : ''}
+                </div>
+
+                <!-- Рейтинг -->
+                <div class="rating">
+                    ${generateStarRating(product.rating)}
+                </div>
+
+                <div class="item-price">${product.price} ₴</div>
+                <div class="item-calories">${product.calories} ккал</div>
+                <div class="item-actions">
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="quantity" id="quantity-${product.id}">${quantity}</span>
+                        <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                `;
-                container.appendChild(itemCard);
-                slideIn(itemCard, 'up');
-            }, index * 100);
+                    <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
+                        <i class="fas fa-cart-plus"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(itemCard);
+            slideIn(itemCard, 'up');
         });
-        
+
         // Инициализация долгого нажатия
         initLongPress();
-        
-    }, 1000);
-    
+
+    }, 500); // Уменьшенная задержка
+
     document.getElementById('search-input').addEventListener('input', filterProducts);
-    
+
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -2506,7 +2509,11 @@ updateDishTimer();
 
 // Улучшенная история заказов
 async function loadOrderHistory() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        // Если пользователь не загружен, ждем немного и пробуем снова
+        setTimeout(() => loadOrderHistory(), 500);
+        return;
+    }
 
     try {
         const data = await apiRequest('/api/orders/history?limit=5');
@@ -2531,7 +2538,11 @@ async function loadOrderHistory() {
 
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
-        showNotification('Ошибка загрузки истории заказов', 'error');
+        // Показываем сообщение об ошибке только если это не первый запуск
+        const historyContainer = document.getElementById('order-history-list');
+        if (historyContainer && historyContainer.innerHTML === '') {
+            historyContainer.innerHTML = '<div class="no-orders">Ошибка загрузки истории заказов</div>';
+        }
     }
 }
 
@@ -2989,11 +3000,11 @@ function toggleTheme() {
     const body = document.body;
     const themeToggle = document.getElementById('theme-toggle');
     const icon = themeToggle.querySelector('i');
-    
-    if (body.classList.contains('light-theme')) {
-        setTheme('dark');
-    } else {
+
+    if (body.classList.contains('dark-theme')) {
         setTheme('light');
+    } else {
+        setTheme('dark');
     }
 }
 
@@ -3001,17 +3012,20 @@ function setTheme(theme) {
     const body = document.body;
     const themeToggle = document.getElementById('theme-toggle');
     const icon = themeToggle.querySelector('i');
-    
+
     body.classList.remove('light-theme', 'dark-theme');
     body.classList.add(theme + '-theme');
-    
+
     if (theme === 'dark') {
         icon.className = 'fas fa-sun';
     } else {
         icon.className = 'fas fa-moon';
     }
-    
+
     localStorage.setItem('theme', theme);
+
+    // Перезагружаем цветовую тему чтобы применить правильные цвета
+    loadColorTheme();
 }
 
 // Загрузка темы при загрузке страницы
