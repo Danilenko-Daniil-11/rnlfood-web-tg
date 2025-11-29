@@ -6,9 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "bot": "node bot.js",
     "dev": "node --watch server.js",
-    "dev-bot": "node --watch bot.js",
     "build": "npm install"
   },
   "dependencies": {
