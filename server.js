@@ -682,7 +682,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Neon Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
-    console.log(`JWT Secret: ${JWT_SECRET ? 'Configured' : 'Using fallback'}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📊 Neon Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+    console.log(`🔐 JWT Secret: ${JWT_SECRET ? 'Configured' : 'Using fallback'}`);
 });

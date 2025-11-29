@@ -1,4 +1,4 @@
-        /* Основные переменные */
+/* Основные переменные для светлой темы */
         :root {
             --primary-color: #00b377;
             --primary-dark: #009966;
@@ -29,6 +29,37 @@
             --glass-border: rgba(255, 255, 255, 0.1);
         }
 
+        /* 8-bit режим */
+        .pixel-theme {
+            --primary-color: #00ff00;
+            --primary-dark: #00cc00;
+            --secondary-color: #ffff00;
+            --accent-color: #ff00ff;
+            --text-dark: #ffffff;
+            --text-light: #cccccc;
+            --background: #000000;
+            --white: #333333;
+            --card-bg: #222222;
+            --border: #444444;
+            --shadow: 0 4px 8px rgba(0,255,0,0.3);
+            --radius: 0px;
+        }
+
+        /* Высококонтрастный режим */
+        .high-contrast {
+            --primary-color: #0000ff;
+            --primary-dark: #0000cc;
+            --secondary-color: #ffff00;
+            --accent-color: #ff0000;
+            --text-dark: #000000;
+            --text-light: #333333;
+            --background: #ffffff;
+            --white: #ffffff;
+            --card-bg: #ffff00;
+            --border: #000000;
+            --shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -39,36 +70,9 @@
         body {
             font-family: 'Roboto', sans-serif;
             background: var(--background);
-            background-image:
-                radial-gradient(circle at 20% 50%, rgba(0, 179, 119, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
-                linear-gradient(135deg, var(--background) 0%, var(--background) 100%);
-            background-attachment: fixed;
-            background-size: 100% 100%, 100% 100%, 100% 100%, 400% 400%;
-            background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%;
-            animation: gradientShift 20s ease infinite;
             color: var(--text-dark);
             line-height: 1.6;
             min-height: 100vh;
-        }
-
-        @keyframes gradientShift {
-            0% {
-                background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%;
-            }
-            25% {
-                background-position: 100% 100%, 100% 0%, 0% 100%, 25% 25%;
-            }
-            50% {
-                background-position: 0% 100%, 100% 100%, 100% 0%, 50% 50%;
-            }
-            75% {
-                background-position: 100% 0%, 0% 100%, 100% 100%, 75% 75%;
-            }
-            100% {
-                background-position: 0% 0%, 0% 0%, 0% 0%, 100% 100%;
-            }
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -146,15 +150,7 @@
             top: 0;
             z-index: 1000;
             border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(var(--card-bg-rgb, 255, 255, 255), 0.8);
-            border-bottom: 1px solid rgba(var(--border-rgb, 233, 236, 239), 0.3);
-        }
-
-        .dark-theme .header {
-            background: rgba(var(--card-bg-rgb, 45, 45, 45), 0.8);
-            border-bottom: 1px solid rgba(var(--border-rgb, 64, 64, 64), 0.3);
+            backdrop-filter: blur(10px);
         }
 
         .header-content {
@@ -430,15 +426,6 @@
             overflow: hidden;
         }
 
-        .dark-theme .hero {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: var(--text-dark);
-        }
-
-        .light-theme .hero {
-            color: var(--white);
-        }
-
         .parallax-bg {
             position: absolute;
             top: 0;
@@ -598,24 +585,23 @@
             align-items: center;
             gap: 10px;
             padding: 15px 30px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: var(--primary-color);
             color: var(--white);
             border: none;
             border-radius: var(--radius);
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             text-decoration: none;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 179, 119, 0.2);
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 12px 35px rgba(0,179,119,0.4);
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,179,119,0.3);
         }
 
         .btn-primary::before {
@@ -625,17 +611,12 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.6s ease;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .btn-primary:hover::before {
             left: 100%;
-        }
-
-        .btn-primary:active {
-            transform: translateY(-1px) scale(0.98);
-            transition: all 0.1s ease;
         }
 
         .btn-secondary {
@@ -666,26 +647,6 @@
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(var(--card-bg-rgb, 255, 255, 255), 0.95);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .form-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
-
-        .dark-theme .form-container {
-            background: rgba(var(--card-bg-rgb, 45, 45, 45), 0.95);
         }
 
         .form-container h2 {
@@ -829,22 +790,8 @@
             color: var(--primary-color);
         }
 
-        /* Исправление для кнопок входа и регистрации */
+        /* Исправление для кнопки регистрации */
         .login-btn-container {
-            display: flex !important;
-            justify-content: center !important;
-            width: 100% !important;
-            margin-bottom: 20px;
-        }
-
-        .login-btn-container .btn-primary {
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .form-footer .btn-contain {
             display: flex;
             justify-content: center;
             width: 100%;
@@ -853,7 +800,6 @@
         .register-btn {
             width: 100%;
             justify-content: center;
-            max-width: 300px; /* Ограничение ширины для лучшего вида */
         }
 
         /* Избранное */
@@ -918,11 +864,12 @@
 
         .profile-header h2 {
             font-family: 'Oswald', sans-serif;
-            font-weight: 800;
+            font-weight: 900;
             font-size: 1.8em;
             color: var(--text-dark);
             letter-spacing: -0.5px;
             margin: 0;
+            text-transform: uppercase;
         }
 
         .balance-card {
@@ -934,11 +881,6 @@
             border-radius: var(--radius);
             color: var(--white);
             min-width: 300px;
-            position: relative;
-        }
-
-        .dark-theme .balance-card {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         }
 
         .balance-info h3 {
@@ -1448,44 +1390,16 @@
             padding: 25px;
             box-shadow: var(--shadow);
             text-align: center;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             border: 1px solid var(--border);
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .item-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 179, 119, 0.05), transparent);
-            transition: left 0.6s ease;
-            z-index: 1;
-        }
-
-        .item-card:hover::before {
-            left: 100%;
         }
 
         .item-card:hover {
-            transform: translateY(-15px) rotateX(8deg) scale(1.02);
-            box-shadow:
-                0 20px 40px rgba(0,0,0,0.1),
-                0 0 0 1px rgba(0, 179, 119, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            border-color: rgba(0, 179, 119, 0.3);
-        }
-
-        .item-card * {
-            position: relative;
-            z-index: 2;
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
         }
 
         .item-image {
@@ -2220,6 +2134,8 @@
             padding: 25px;
             border-bottom: 1px solid var(--border);
             position: relative;
+            background: var(--primary-color);
+            color: var(--white);
         }
 
         .modal-header h3 {
@@ -2880,52 +2796,6 @@
             }
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
-        @keyframes glowPulse {
-            0% { box-shadow: 0 0 5px rgba(0, 179, 119, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(0, 179, 119, 0.8), 0 0 30px rgba(0, 179, 119, 0.4); }
-            100% { box-shadow: 0 0 5px rgba(0, 179, 119, 0.5); }
-        }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
         .shake {
             animation: shake 0.5s ease;
         }
@@ -2939,38 +2809,6 @@
             z-index: 10000;
             pointer-events: none;
             animation: flyToCart 1s ease-in forwards;
-        }
-
-        .float-up {
-            animation: floatUp 3s ease-in-out infinite;
-        }
-
-        .glow-pulse {
-            animation: glowPulse 2s ease-in-out infinite;
-        }
-
-        .slide-in-up {
-            animation: slideInUp 0.6s ease-out;
-        }
-
-        .bounce-in {
-            animation: bounceIn 0.8s ease-out;
-        }
-
-        .shimmer {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .shimmer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
         }
 
         /* Эффект ripple */
@@ -3402,236 +3240,239 @@
             animation: themePulse 0.5s ease;
         }
 
-        /* Продвинутые эффекты */
-        .glass-morphism {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .dark-theme .glass-morphism {
-            background: rgba(45, 45, 45, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .neon-glow {
-            box-shadow:
-                0 0 5px var(--primary-color),
-                0 0 10px var(--primary-color),
-                0 0 15px var(--primary-color),
-                0 0 20px var(--primary-color);
-        }
-
-        .text-gradient {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .card-hover-lift {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card-hover-lift:hover {
-            transform: translateY(-8px) rotateX(5deg);
-            box-shadow:
-                0 15px 35px rgba(0,0,0,0.1),
-                0 5px 15px rgba(0,0,0,0.05);
-        }
-
-        .button-magnetic {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .button-magnetic:hover {
-            transform: translateY(-2px);
-        }
-
-        .button-magnetic:active {
-            transform: translateY(0);
-        }
-
-        .floating-animation {
-            animation: floatUp 6s ease-in-out infinite;
-        }
-
-        .stagger-animation {
-            animation: slideInUp 0.6s ease-out;
-        }
-
-        .stagger-animation:nth-child(1) { animation-delay: 0.1s; }
-        .stagger-animation:nth-child(2) { animation-delay: 0.2s; }
-        .stagger-animation:nth-child(3) { animation-delay: 0.3s; }
-        .stagger-animation:nth-child(4) { animation-delay: 0.4s; }
-        .stagger-animation:nth-child(5) { animation-delay: 0.5s; }
-
-        .morphing-blob {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            border-radius: 50% 30% 70% 40%;
-            animation: morph 8s ease-in-out infinite;
-            opacity: 0.1;
-            z-index: -1;
-        }
-
-        @keyframes morph {
-            0%, 100% { border-radius: 50% 30% 70% 40%; }
-            25% { border-radius: 30% 70% 40% 50%; }
-            50% { border-radius: 70% 40% 50% 30%; }
-            75% { border-radius: 40% 50% 30% 70%; }
-        }
-
-        .interactive-ripple {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .interactive-ripple::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-
-        .interactive-ripple:active::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        .parallax-element {
-            transform: translateZ(0);
-            will-change: transform;
-        }
-
-        .scroll-reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.6s ease;
-        }
-
-        .scroll-reveal.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .gradient-border {
-            position: relative;
+        /* Meal Planner Styles */
+        .meal-planner-container {
             background: var(--card-bg);
             border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
 
-        .gradient-border::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+        .planner-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .week-navigation {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .week-navigation h3 {
+            color: var(--text-dark);
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 0;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .planner-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .weekly-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .calendar-day {
+            background: var(--background);
             border-radius: var(--radius);
-            padding: 2px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask-composite: exclude;
-            -webkit-mask-composite: xor;
-        }
-
-        .holographic {
-            background: linear-gradient(135deg,
-                rgba(255,255,255,0.1) 0%,
-                rgba(255,255,255,0.05) 50%,
-                rgba(255,255,255,0.1) 100%);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-        }
-
-        .holographic::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(255,255,255,0.4),
-                transparent);
-            animation: holographic-shine 3s infinite;
-        }
-
-        @keyframes holographic-shine {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .liquid-button {
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            border: 2px solid var(--border);
             transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .liquid-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(255,255,255,0.2),
-                transparent);
-            transition: left 0.5s ease;
+        .calendar-day:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
         }
 
-        .liquid-button:hover::before {
-            left: 100%;
+        .calendar-day.planned {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--background) 0%, rgba(0,179,119,0.1) 100%);
         }
 
-        .perspective-card {
-            transform-style: preserve-3d;
-            transition: transform 0.6s ease;
+        .day-header {
+            margin-bottom: 15px;
         }
 
-        .perspective-card:hover {
-            transform: rotateY(5deg) rotateX(5deg);
+        .day-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 1em;
+            margin-bottom: 5px;
         }
 
-        .depth-shadow {
-            box-shadow:
-                0 1px 3px rgba(0,0,0,0.12),
-                0 1px 2px rgba(0,0,0,0.24);
-            transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        .day-date {
+            color: var(--text-light);
+            font-size: 0.9em;
         }
 
-        .depth-shadow:hover {
-            box-shadow:
-                0 14px 28px rgba(0,0,0,0.25),
-                0 10px 10px rgba(0,0,0,0.22);
+        .day-meals {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .micro-interactions {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .meal-slot {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.8em;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
-        .micro-interactions:hover {
-            transform: scale(1.02);
+        .meal-slot:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: var(--white);
         }
 
-        .micro-interactions:active {
-            transform: scale(0.98);
-            transition: all 0.1s ease;
+        .meal-slot.filled {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .meal-slot.empty {
+            border-style: dashed;
+            color: var(--text-light);
+        }
+
+        .meal-slot.empty:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .meal-plan-summary {
+            background: var(--background);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .summary-card {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .summary-card h4 {
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Meal Planner Button */
+        .meal-planner-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .meal-planner-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* Responsive для планировщика */
+        @media (max-width: 768px) {
+            .weekly-calendar {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .calendar-day {
+                min-height: 150px;
+                padding: 15px;
+            }
+
+            .planner-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .week-navigation {
+                justify-content: space-between;
+            }
+
+            .week-navigation h3 {
+                min-width: auto;
+                font-size: 1em;
+            }
+
+            .meal-plan-summary {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .summary-actions {
+                justify-content: center;
+            }
         }

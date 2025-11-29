@@ -1,189 +1,134 @@
--- Упрощенная схема базы данных для приложения "РНЛ ЕДА"
--- Адаптирована под текущий код приложения
+-- Создаем enum типы сначала
+CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled');
+CREATE TYPE payment_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'refunded');
+CREATE TYPE app_role AS ENUM ('user', 'staff', 'admin');
 
-CREATE SCHEMA "public";
-
--- Перечисления
-CREATE TYPE "order_status" AS ENUM('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled');
-CREATE TYPE "app_role" AS ENUM('user', 'admin');
-
--- Основные таблицы
-CREATE TABLE "users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"username" text NOT NULL UNIQUE,
-	"password_hash" text NOT NULL,
-	"email" text UNIQUE,
-	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+-- Таблица категорий блюд
+CREATE TABLE meal_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  description text,
+  image_url text,
+  sort_order integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "profiles" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL UNIQUE REFERENCES "users"("id"),
-	"full_name" text NOT NULL,
-	"class_name" text,
-	"balance" numeric(10, 2) DEFAULT 0.00,
-	"role" app_role DEFAULT 'user',
-	"parents" text,
-	"age" smallint,
-	"avatar" text,
-	"allergens" text[] DEFAULT '{}',
-	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+-- Таблица блюд
+CREATE TABLE meals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  category_id uuid REFERENCES meal_categories(id),
+  name text NOT NULL,
+  description text,
+  price numeric NOT NULL,
+  image_url text,
+  ingredients text[], -- Исправляем ARRAY на text[]
+  allergens text[],   -- Исправляем ARRAY на text[]
+  is_vegetarian boolean DEFAULT false,
+  is_available boolean DEFAULT true,
+  preparation_time integer,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "meals" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"name" text NOT NULL,
-	"description" text,
-	"price" numeric(10, 2) NOT NULL,
-	"category_name" text DEFAULT 'Горячее',
-	"image_url" text,
-	"calories" integer,
-	"allergens" text[] DEFAULT '{}',
-	"is_vegetarian" boolean DEFAULT false,
-	"is_gluten_free" boolean DEFAULT false,
-	"rating" numeric(3,1) DEFAULT 4.0,
-	"is_new" boolean DEFAULT false,
-	"is_available" boolean DEFAULT true,
-	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+-- Таблица промокодов
+CREATE TABLE promocodes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text UNIQUE NOT NULL,
+  discount_amount numeric,
+  discount_percentage integer,
+  max_uses integer,
+  current_uses integer DEFAULT 0,
+  expires_at timestamptz,
+  is_active boolean DEFAULT true,
+  created_by uuid,
+  created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "orders" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id"),
-	"total_amount" numeric(10, 2) NOT NULL,
-	"discount_amount" numeric(10, 2) DEFAULT 0.00,
-	"final_amount" numeric(10, 2) NOT NULL,
-	"promocode_id" uuid,
-	"status" order_status DEFAULT 'pending',
-	"items" jsonb, -- JSON с элементами заказа
-	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+-- Таблица заказов
+CREATE TABLE orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL, -- Без foreign key к auth.users
+  total_amount numeric NOT NULL,
+  discount_amount numeric DEFAULT 0.00,
+  final_amount numeric NOT NULL,
+  promocode_id uuid REFERENCES promocodes(id),
+  status order_status DEFAULT 'pending',
+  pickup_time timestamptz,
+  qr_code text,
+  notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "promocodes" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"code" text NOT NULL UNIQUE,
-	"discount_percentage" integer,
-	"discount_percent" integer, -- для обратной совместимости
-	"expires_at" timestamp with time zone,
-	"is_active" boolean DEFAULT true,
-	"created_by" uuid REFERENCES "users"("id"),
-	"created_at" timestamp with time zone DEFAULT now()
+-- Таблица элементов заказа
+CREATE TABLE order_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id uuid REFERENCES orders(id),
+  meal_id uuid REFERENCES meals(id),
+  quantity integer DEFAULT 1,
+  unit_price numeric NOT NULL,
+  total_price numeric NOT NULL,
+  created_at timestamptz DEFAULT now()
 );
 
--- Дополнительные таблицы для расширенного функционала
-CREATE TABLE "achievements" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"name" text NOT NULL,
-	"description" text,
-	"icon" text DEFAULT '🏆',
-	"created_at" timestamp with time zone DEFAULT now()
+-- Таблица профилей пользователей
+CREATE TABLE profiles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid UNIQUE NOT NULL,
+  full_name text NOT NULL,
+  class_name text,
+  balance numeric DEFAULT 0.00,
+  phone text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "user_achievements" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-	"achievement_id" uuid NOT NULL REFERENCES "achievements"("id"),
-	"unlocked_at" timestamp with time zone DEFAULT now(),
-	UNIQUE("user_id", "achievement_id")
+-- Таблица платежей
+CREATE TABLE payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  payment_method text NOT NULL,
+  status payment_status DEFAULT 'pending',
+  transaction_id text,
+  created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "favorite_meals" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-	"meal_id" uuid NOT NULL REFERENCES "meals"("id") ON DELETE CASCADE,
-	"created_at" timestamp with time zone DEFAULT now(),
-	UNIQUE("user_id", "meal_id")
+-- Таблица ролей пользователей
+CREATE TABLE user_roles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  role app_role DEFAULT 'user',
+  created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE "user_carts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-	"meal_id" uuid NOT NULL REFERENCES "meals"("id") ON DELETE CASCADE,
-	"quantity" integer DEFAULT 1,
-	"added_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now(),
-	UNIQUE("user_id", "meal_id")
-);
+-- Вставляем тестовые данные
+INSERT INTO meal_categories (name, description, sort_order) VALUES
+('Горячее', 'Основные горячие блюда', 1),
+('Напитки', 'Напитки и соки', 2),
+('Салаты', 'Свежие салаты', 3),
+('Десерты', 'Сладости и выпечка', 4);
 
-CREATE TABLE "balance_transactions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id"),
-	"amount" numeric(10, 2) NOT NULL,
-	"method" text NOT NULL CHECK (method IN ('crypto', 'card', 'cash')),
-	"description" text,
-	"created_at" timestamp with time zone DEFAULT now()
-);
+INSERT INTO meals (category_id, name, description, price, ingredients, allergens, is_vegetarian, preparation_time) VALUES
+((SELECT id FROM meal_categories WHERE name = 'Горячее'), 'Куриный суп', 'Ароматный куриный суп с овощами', 25.00, '{"курица", "картофель", "морковь", "лук"}', '{}', false, 15),
+((SELECT id FROM meal_categories WHERE name = 'Горячее'), 'Гречневая каша', 'Гречневая каша с маслом', 30.00, '{"гречка", "масло", "соль"}', '{}', true, 10),
+((SELECT id FROM meal_categories WHERE name = 'Горячее'), 'Котлета с пюре', 'Котлета куриная с картофельным пюре', 40.00, '{"курица", "картофель", "молоко", "масло"}', '{"молоко"}', false, 20),
+((SELECT id FROM meal_categories WHERE name = 'Напитки'), 'Чай', 'Черный или зеленый чай', 15.00, '{"чай", "вода", "сахар"}', '{}', true, 5),
+((SELECT id FROM meal_categories WHERE name = 'Напитки'), 'Компот', 'Компот из сухофруктов', 12.00, '{"сухофрукты", "вода", "сахар"}', '{}', true, 5),
+((SELECT id FROM meal_categories WHERE name = 'Салаты'), 'Салат овощной', 'Свежий овощной салат', 20.00, '{"помидоры", "огурцы", "лук", "масло"}', '{}', true, 10),
+((SELECT id FROM meal_categories WHERE name = 'Десерты'), 'Шарлотка', 'Яблочная шарлотка', 18.00, '{"яблоки", "мука", "яйца", "сахар"}', '{"глютен", "яйца"}', true, 15);
 
-CREATE TABLE "user_notifications" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-	"title" text NOT NULL,
-	"message" text NOT NULL,
-	"type" text DEFAULT 'info',
-	"is_read" boolean DEFAULT false,
-	"created_at" timestamp with time zone DEFAULT now()
-);
+INSERT INTO promocodes (code, discount_percentage, max_uses, expires_at) VALUES
+('WELCOME10', 10, 100, '2025-12-31 23:59:59'),
+('STUDENT15', 15, 200, '2025-12-31 23:59:59'),
+('SUMMER20', 20, 50, '2025-08-31 23:59:59');
 
-CREATE TABLE "push_subscriptions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid REFERENCES "users"("id") ON DELETE CASCADE,
-	"endpoint" text NOT NULL UNIQUE,
-	"keys_auth" text NOT NULL,
-	"keys_p256dh" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now()
-);
-
-CREATE TABLE "user_sessions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" uuid NOT NULL REFERENCES "users"("id"),
-	"session_token" text NOT NULL UNIQUE,
-	"expires_at" timestamp with time zone NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now()
-);
-
--- Индексы для оптимизации запросов
-CREATE INDEX "idx_users_username" ON "users" ("username");
-CREATE UNIQUE INDEX "users_username_key" ON "users" ("username");
-CREATE UNIQUE INDEX "users_email_key" ON "users" ("email");
-
-CREATE INDEX "idx_profiles_user_id" ON "profiles" ("user_id");
-
-CREATE INDEX "idx_meals_category_name" ON "meals" ("category_name");
-CREATE INDEX "idx_meals_is_available" ON "meals" ("is_available");
-CREATE INDEX "idx_meals_rating" ON "meals" ("rating");
-
-CREATE INDEX "idx_orders_user_id" ON "orders" ("user_id");
-CREATE INDEX "idx_orders_status" ON "orders" ("status");
-CREATE INDEX "idx_orders_created_at" ON "orders" ("created_at");
-
-CREATE UNIQUE INDEX "promocodes_code_key" ON "promocodes" ("code");
-
-CREATE INDEX "idx_user_achievements_user" ON "user_achievements" ("user_id");
-
-CREATE INDEX "idx_favorite_meals_user" ON "favorite_meals" ("user_id");
-
-CREATE INDEX "idx_user_carts_user" ON "user_carts" ("user_id");
-
-CREATE INDEX "idx_balance_transactions_user" ON "balance_transactions" ("user_id");
-
-CREATE INDEX "idx_user_notifications_user" ON "user_notifications" ("user_id");
-CREATE INDEX "idx_user_notifications_read" ON "user_notifications" ("is_read");
-
-CREATE INDEX "idx_user_sessions_token" ON "user_sessions" ("session_token");
-CREATE INDEX "idx_user_sessions_user" ON "user_sessions" ("user_id");
-
--- Начальные данные для тестирования
-INSERT INTO "achievements" ("name", "description", "icon") VALUES
-('Первый заказ', 'Сделайте свой первый заказ в столовой', '🏆'),
-('Гурман', 'Попробуйте 10 разных блюд', '🍕'),
-('Здоровое питание', 'Закажите 5 салатов', '🥗'),
-('Сладкоежка', 'Попробуйте все десерты', '🍰');
-
-INSERT INTO "promocodes" ("code", "discount_percentage", "expires_at", "is_active") VALUES
-('WELCOME10', 10, '2025-12-31 23:59:59+00', true),
-('STUDENT15', 15, '2025-12-31 23:59:59+00', true),
-('SUMMER20', 20, '2025-08-31 23:59:59+00', true);
+-- Создаем индексы для улучшения производительности
+CREATE INDEX idx_meals_category_id ON meals(category_id);
+CREATE INDEX idx_meals_is_available ON meals(is_available);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_payments_user_id ON payments(user_id);
+CREATE INDEX idx_profiles_user_id ON profiles(user_id);

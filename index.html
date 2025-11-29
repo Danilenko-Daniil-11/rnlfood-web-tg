@@ -29,8 +29,10 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo-section">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300b377'/%3E%3Ctext x='50' y='60' font-family='Arial' font-size='30' fill='white' text-anchor='middle'%3ERNL%3C/text%3E%3C/svg%3E" 
-                         alt="РНЛ ЕДА" class="logo" id="main-logo" onclick="goTo('start')">
+                    <svg viewBox="0 0 100 100" class="logo" id="main-logo" onclick="goTo('start')" alt="РНЛ ЕДА">
+                        <circle cx="50" cy="50" r="45" fill="var(--primary-color)"/>
+                        <text x="50" y="60" font-family="Arial" font-size="30" fill="var(--white)" text-anchor="middle">RNL</text>
+                    </svg>
                     <div>
                         <div class="logo-text">Ришельевский Научный Лицей</div>
                         <div class="logo-subtext">Сервис питания</div>
@@ -41,43 +43,48 @@
                     <button class="voice-btn btn-particle" id="voice-control">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    
+
                     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
                         <i class="fas fa-moon"></i>
                     </button>
                     <button class="theme-palette-btn btn-particle" onclick="showThemePalette()">
                         <i class="fas fa-palette"></i>
                     </button>
-                    
+
+                    <!-- Планировщик питания -->
+                    <button class="meal-planner-btn btn-particle" onclick="goTo('meal-planner')">
+                        <i class="fas fa-calendar-alt"></i>
+                    </button>
+
                     <!-- Режим для родителей -->
                     <button class="parent-mode-btn btn-particle" id="parent-mode" onclick="toggleParentMode()">
                         <i class="fas fa-user-shield"></i>
                     </button>
-                    
+
                     <!-- Случайное блюдо -->
                     <button class="random-dish-btn btn-particle" onclick="showRandomDish()">
                         <i class="fas fa-dice"></i>
                     </button>
-                    
+
                     <div class="promo-btn btn-particle" onclick="showPromoModal()">
                         <i class="fas fa-tag"></i>
                         Промокод
                     </div>
-                    
+
                     <div class="cart-icon" id="cart-icon" onclick="toggleCart()">
                         <i class="fas fa-shopping-basket"></i>
                         <span id="cart-count" class="cart-count">0</span>
                     </div>
-                    
+
                     <div class="avatar" onclick="goTo('profile')">
                         <i class="fas fa-user"></i>
                     </div>
-                    
+
                     <button class="logout-btn btn-particle" id="logout-btn" onclick="logout()" style="display: none;">
                         <i class="fas fa-sign-out-alt"></i>
                         Выйти
                     </button>
-                    
+
                     <button class="admin-btn btn-particle" id="admin-btn" onclick="goTo('admin')" style="display: none;">
                         <i class="fas fa-cog"></i>
                         Админ
@@ -127,7 +134,7 @@
                     <!-- Карусель отзывов -->
                     <div class="reviews-carousel">
                         <div class="review-slide active">
-                            <p>"Лучший сервис в лицее!"</p>
+                            <p>"Лучший сервис в лицее! 🍕"</p>
                             <span>- Мария, 10-А</span>
                         </div>
                         <div class="review-slide">
@@ -156,7 +163,7 @@
                 
                 <!-- Блюдо дня -->
                 <div class="dish-of-the-day">
-                    <h3>Блюдо дня</h3>
+                    <h3>🍽️ Блюдо дня</h3>
                     <div class="daily-dish-card">
                         <div class="dish-image">
                             <i class="fas fa-utensils"></i>
@@ -213,7 +220,7 @@
                         </label>
                     </div>
                     <div class="btn-contain login-btn-container">
-                        <button class="btn-primary btn-particle" onclick="login()">
+                        <button class="btn-primary btn-particle" onclick="login(this)">
                             <span>ВОЙТИ В СИСТЕМУ</span>
                             <i class="fas fa-sign-in-alt"></i>
                         </button>
@@ -233,7 +240,7 @@
             <!-- Избранное -->
             <section id="favorites" class="screen">
                 <div class="page-header">
-                    <h2>ИЗБРАННОЕ</h2>
+                    <h2>❤️ ИЗБРАННОЕ</h2>
                     <div class="header-actions">
                         <button class="btn-back btn-particle" onclick="goTo('assortment')">
                             <i class="fas fa-arrow-left"></i>
@@ -616,6 +623,75 @@
                 </div>
             </section>
 
+            <!-- Meal Planner Screen -->
+            <section id="meal-planner" class="screen">
+                <div class="page-header">
+                    <h2>🍽️ ПЛАНИРОВЩИК ПИТАНИЯ</h2>
+                    <div class="btn-contain" style="display: inline-block;">
+                        <button class="btn-back btn-particle" onclick="goTo('assortment')">
+                            <i class="fas fa-arrow-left"></i>
+                            Назад
+                        </button>
+                    </div>
+                </div>
+
+                <div class="meal-planner-container">
+                    <div class="planner-controls">
+                        <div class="week-navigation">
+                            <button class="btn-secondary btn-particle" onclick="previousWeek()">
+                                <i class="fas fa-chevron-left"></i>
+                                Предыдущая неделя
+                            </button>
+                            <h3 id="current-week">Текущая неделя</h3>
+                            <button class="btn-secondary btn-particle" onclick="nextWeek()">
+                                Следующая неделя
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="planner-actions">
+                            <button class="btn-primary btn-particle" onclick="generateMealPlan()">
+                                <i class="fas fa-magic"></i>
+                                Сгенерировать план
+                            </button>
+                            <button class="btn-secondary btn-particle" onclick="clearMealPlan()">
+                                <i class="fas fa-trash"></i>
+                                Очистить план
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="weekly-calendar" id="weekly-calendar">
+                        <!-- Календарь будет загружен через JavaScript -->
+                    </div>
+
+                    <div class="meal-plan-summary">
+                        <div class="summary-card">
+                            <h4>📊 Статистика недели</h4>
+                            <div class="summary-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Общие калории:</span>
+                                    <span class="stat-value" id="weekly-calories">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Общая стоимость:</span>
+                                    <span class="stat-value" id="weekly-cost">0 ₴</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Дни с планом:</span>
+                                    <span class="stat-value" id="planned-days">0/7</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="summary-actions">
+                            <button class="btn-primary btn-particle" onclick="orderWeeklyPlan()">
+                                <i class="fas fa-shopping-cart"></i>
+                                Заказать на неделю
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Admin Panel Screen -->
             <section id="admin" class="screen">
                 <div class="page-header">
@@ -627,7 +703,7 @@
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="admin-container">
                     <div class="admin-stats">
                         <div class="stat-card">
@@ -648,17 +724,17 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">Выручка сегодня</div>
-                            <div class="stat-value" id="admin-today-revenue">0 ₴</div>
+                            <div class="stat-value" id="admin-today-revenue">0</div>
                         </div>
                     </div>
-                    
+
                     <div class="admin-orders">
                         <h3>Последние заказы</h3>
                         <div id="admin-orders-list">
                             <!-- Admin orders will be loaded here -->
                         </div>
                     </div>
-                    
+
                     <div class="popular-meals">
                         <h3>Популярные блюда</h3>
                         <div id="admin-popular-meals">
@@ -790,22 +866,22 @@
                         <option value="7-Б">7-Б</option>
                         <option value="7-В">7-В</option>
                         <option value="7-Г">7-Г</option>
-                        <option value="8-ИКТ">8-ИКТ</option>
-                        <option value="8-ФТ">8-ФТ</option>
-                        <option value="8-ХБ">8-ХБ</option>
-                        <option value="8-Линг">8-Линг</option>
-                        <option value="9-ИКТ">9-ИКТ</option>
-                        <option value="9-ФТ">9-ФТ</option>
-                        <option value="9-ХБ">9-ХБ</option>
-                        <option value="9-Линг">9-Линг</option>
-                        <option value="10-ИКТ">10-ИКТ</option>
-                        <option value="10-ФТ">10-ФТ</option>
-                        <option value="10-ХБ">10-ХБ</option>
-                        <option value="10-Линг">10-Линг</option>
-                        <option value="11-ИКТ">11-ИКТ</option>
-                        <option value="11-ФТ">11-ФТ</option>
-                        <option value="11-ХБ">11-ХБ</option>
-                        <option value="11-Линг">11-Линг</option>
+                        <option value="8-икт">8-икт</option>
+                        <option value="8-фт">8-фт</option>
+                        <option value="8-хб">8-хб</option>
+                        <option value="8-линг">8-линг</option>
+                        <option value="9-икт">9-икт</option>
+                        <option value="9-фт">9-фт</option>
+                        <option value="9-хб">9-хб</option>
+                        <option value="9-линг">9-линг</option>
+                        <option value="10-икт">10-икт</option>
+                        <option value="10-фт">10-фт</option>
+                        <option value="10-хб">10-хб</option>
+                        <option value="10-линг">10-линг</option>
+                        <option value="11-икт">11-икт</option>
+                        <option value="11-фт">11-фт</option>
+                        <option value="11-хб">11-хб</option>
+                        <option value="11-линг">11-линг</option>
                     </select>
                     <label for="edit-grade">Класс</label>
                 </div>
@@ -883,22 +959,22 @@
                         <option value="7-Б">7-Б</option>
                         <option value="7-В">7-В</option>
                         <option value="7-Г">7-Г</option>
-                        <option value="8-ИКТ">8-ИКТ</option>
-                        <option value="8-ФТ">8-ФТ</option>
-                        <option value="8-ХБ">8-ХБ</option>
-                        <option value="8-Линг">8-Линг</option>
-                        <option value="9-ИКТ">9-ИКТ</option>
-                        <option value="9-ФТ">9-ФТ</option>
-                        <option value="9-ХБ">9-ХБ</option>
-                        <option value="9-Линг">9-Линг</option>
-                        <option value="10-ИКТ">10-ИКТ</option>
-                        <option value="10-ФТ">10-ФТ</option>
-                        <option value="10-ХБ">10-ХБ</option>
-                        <option value="10-Линг">10-Линг</option>
-                        <option value="11-ИКТ">11-ИКТ</option>
-                        <option value="11-ФТ">11-ФТ</option>
-                        <option value="11-ХБ">11-ХБ</option>
-                        <option value="11-Линг">11-Линг</option>
+                        <option value="8-икт">8-икт</option>
+                        <option value="8-фт">8-фт</option>
+                        <option value="8-хб">8-хб</option>
+                        <option value="8-линг">8-линг</option>
+                        <option value="9-икт">9-икт</option>
+                        <option value="9-фт">9-фт</option>
+                        <option value="9-хб">9-хб</option>
+                        <option value="9-линг">9-линг</option>
+                        <option value="10-икт">10-икт</option>
+                        <option value="10-фт">10-фт</option>
+                        <option value="10-хб">10-хб</option>
+                        <option value="10-линг">10-линг</option>
+                        <option value="11-икт">11-икт</option>
+                        <option value="11-фт">11-фт</option>
+                        <option value="11-хб">11-хб</option>
+                        <option value="11-линг">11-линг</option>
                     </select>
                     <label for="reg-grade">Класс</label>
                 </div>
@@ -929,7 +1005,7 @@
                 </div>
 
                 <div class="custom-theme-section">
-                    <h4>Своя цветовая схема</h4>
+                    <h4>🎨 Своя цветовая схема</h4>
                     <div class="color-picker-group">
                         <div class="color-picker">
                             <label>Основной цвет:</label>

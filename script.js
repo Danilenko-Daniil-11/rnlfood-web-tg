@@ -285,55 +285,47 @@ function goTo(screenId) {
     const currentScreen = document.querySelector('.screen.active');
     if (currentScreen) {
         currentScreen.style.opacity = '0';
-        currentScreen.style.transform = 'translateY(-20px)';
-        currentScreen.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        currentScreen.style.transform = 'translateY(20px)';
+        currentScreen.style.transition = 'all 0.3s ease';
     }
-
+    
     setTimeout(() => {
-        // Скрываем все экраны
         document.querySelectorAll(".screen").forEach(s => {
             s.classList.remove("active");
             s.style.opacity = '0';
             s.style.transform = 'translateY(20px)';
-            s.style.transition = 'none';
         });
-
-        // Показываем целевой экран
+        
         const targetScreen = document.getElementById(screenId);
         targetScreen.classList.add("active");
-
-        // Принудительно обновляем layout
-        targetScreen.offsetHeight;
-
-        // Анимируем появление
-        targetScreen.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-        targetScreen.style.opacity = '1';
-        targetScreen.style.transform = 'translateY(0)';
-
-        // Анимация появления контента
-        const content = targetScreen.querySelector('.hero, .form-container, .page-header, .profile-header, .success-container');
-        if (content) {
-            setTimeout(() => {
+        
+        setTimeout(() => {
+            targetScreen.style.opacity = '1';
+            targetScreen.style.transform = 'translateY(0)';
+            
+            // Анимация появления контента
+            const content = targetScreen.querySelector('.hero, .form-container, .page-header, .profile-header, .success-container');
+            if (content) {
                 slideIn(content, 'up');
-            }, 200);
-        }
-
+            }
+        }, 50);
+        
         if (screenId === "start") {
             document.getElementById("authors").style.display = "block";
         } else {
             document.getElementById("authors").style.display = "none";
         }
-
+        
         // Обновление нижней навигации
         updateBottomNavigation(screenId);
-
+        
         switch(screenId) {
             case 'profile':
                 updateProfile();
                 loadAchievements();
                 loadCaloriesChart();
                 // Загружаем историю заказов при каждом переходе
-                setTimeout(() => loadOrderHistory(), 100);
+                loadOrderHistory();
                 break;
             case 'assortment':
                 updateCartSummary();
@@ -358,8 +350,11 @@ function goTo(screenId) {
             case 'order-history':
                 loadFullOrderHistory();
                 break;
+            case 'meal-planner':
+                initMealPlannerPage();
+                break;
         }
-    }, 400);
+    }, 300);
 }
 
 function updateBottomNavigation(screenId) {
@@ -450,7 +445,7 @@ function createSnowflakes(container) {
         setTimeout(() => {
             const snowflake = document.createElement('div');
             snowflake.className = 'snowflake';
-            snowflake.innerHTML = '*';
+            snowflake.innerHTML = '❄';
             snowflake.style.left = Math.random() * 100 + 'vw';
             snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
             snowflake.style.animationDelay = Math.random() * 5 + 's';
@@ -465,7 +460,7 @@ function createSnowflakes(container) {
 }
 
 function createLeaves(container) {
-    const leaves = ['*', '*', '*'];
+    const leaves = ['🍁', '🍂', '🥮'];
     for (let i = 0; i < 30; i++) {
         setTimeout(() => {
             const leaf = document.createElement('div');
@@ -568,7 +563,7 @@ function initKonamiCode() {
 function activateEasterEgg() {
     is8BitMode = !is8BitMode;
     document.body.classList.toggle('pixel-theme', is8BitMode);
-    showNotification(is8BitMode ? '8-bit режим активирован!' : '8-bit режим выключен', 'success');
+    showNotification(is8BitMode ? '8-bit режим активирован! 🎮' : '8-bit режим выключен', 'success');
 }
 
 // Прогресс бар чтения
@@ -923,33 +918,35 @@ function updateProfile() {
         goTo('login');
         return;
     }
-
+    
     const hour = new Date().getHours();
     let greeting = 'ДОБРЫЙ ВЕЧЕР';
     if (hour < 12) greeting = 'ДОБРОЕ УТРО';
     else if (hour < 18) greeting = 'ДОБРЫЙ ДЕНЬ';
-
+    
     document.getElementById('welcome').textContent = `${greeting}, ${currentUser.username.toUpperCase()}`;
-
+    
     // Анимация изменения баланса
     const balanceElement = document.getElementById('balance');
     const currentBalance = parseFloat(balanceElement.textContent) || 0;
     const newBalance = (currentUser.balance || 0).toFixed(2);
-
+    
     if (currentBalance !== parseFloat(newBalance)) {
         animateValue(balanceElement, currentBalance, parseFloat(newBalance), 1000);
     } else {
         balanceElement.textContent = `${newBalance} ₴`;
     }
-
-    // Цвет баланса должен меняться в зависимости от темы - всегда использовать текущий primary цвет
-    balanceElement.style.color = 'var(--primary-color)';
+    
+    // Цвет баланса должен меняться в зависимости от темы
+    balanceElement.style.color = '';
     if (currentUser.balance === 0) {
+        balanceElement.style.color = 'var(--primary-color)';
         balanceElement.classList.add('pulse');
     } else {
+        balanceElement.style.color = 'inherit';
         balanceElement.classList.remove('pulse');
     }
-
+    
     // Заполняем все поля личных данных
     document.getElementById('profile-name').textContent = currentUser.full_name || '-';
     document.getElementById('profile-age').textContent = currentUser.age || calculateAgeFromClass(currentUser.class_name) || '-';
@@ -960,28 +957,12 @@ function updateProfile() {
 // Вспомогательная функция для расчета возраста по классу
 function calculateAgeFromClass(className) {
     if (!className) return null;
-
-    // Обрабатываем разные форматы классов
-    const classLower = className.toLowerCase();
-
-    // Старшие классы (8-11)
-    if (classLower.includes('8') || classLower.includes('восьмой')) return '13-14 лет';
-    if (classLower.includes('9') || classLower.includes('девятый')) return '14-15 лет';
-    if (classLower.includes('10') || classLower.includes('десятый')) return '15-16 лет';
-    if (classLower.includes('11') || classLower.includes('одиннадцатый')) return '16-17 лет';
-
-    // Специальности
-    if (classLower.includes('икт') || classLower.includes('информационные технологии')) return '15-17 лет';
-    if (classLower.includes('фт') || classLower.includes('физика-техника')) return '15-17 лет';
-    if (classLower.includes('хб') || classLower.includes('химия-биология')) return '15-17 лет';
-    if (classLower.includes('линг') || classLower.includes('лингвистика')) return '15-17 лет';
-
-    // Младшие классы (5-7)
+    
+    // Примерная логика: 5 класс = 10-11 лет, 6 класс = 11-12 и т.д.
     const classNumber = parseInt(className.split('-')[0]);
-    if (classNumber >= 5 && classNumber <= 7) {
+    if (classNumber >= 5 && classNumber <= 11) {
         return (classNumber + 5) + ' лет';
     }
-
     return null;
 }
 
@@ -1076,17 +1057,14 @@ document.getElementById('avatar-input').addEventListener('change', function(e) {
 // Загрузка аватара при инициализации
 function loadAvatar() {
     if (!currentUser) return;
-
-    // Получаем аватар только для текущего пользователя
+    
+    // Пробуем сначала получить аватар для текущего пользователя
     const userAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
-
-    if (userAvatar) {
+    const savedAvatar = userAvatar || localStorage.getItem('avatar');
+    
+    if (savedAvatar) {
         const avatarPreview = document.getElementById('avatar-preview');
-        avatarPreview.innerHTML = `<img src="${userAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-    } else {
-        // Если аватара нет, показываем стандартный
-        const avatarPreview = document.getElementById('avatar-preview');
-        avatarPreview.innerHTML = '<i class="fas fa-user-circle" style="font-size: 60px; color: var(--text-secondary);"></i>';
+        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
     }
 }
 
@@ -1094,17 +1072,17 @@ function loadAvatar() {
 function loadAchievements() {
     const container = document.getElementById('achievements-container');
     if (!container) return;
-
+    
     const achievementList = [
-        { id: 'first_order', name: 'Первый заказ', icon: '🏆', description: 'Сделайте первый заказ' },
+        { id: 'first_order', name: 'Первый заказ', icon: '🥇', description: 'Сделайте первый заказ' },
         { id: 'foodie', name: 'Гурман', icon: '🍕', description: 'Попробуйте 10 разных блюд' },
         { id: 'regular', name: 'Постоянный клиент', icon: '⭐', description: 'Сделайте 20 заказов' },
         { id: 'healthy', name: 'Здоровое питание', icon: '🥗', description: 'Закажите 5 салатов' },
         { id: 'sweet_tooth', name: 'Сладкоежка', icon: '🍰', description: 'Попробуйте все десерты' }
     ];
-
+    
     container.innerHTML = '';
-
+    
     achievementList.forEach(achievement => {
         const isUnlocked = achievements.includes(achievement.id);
         const achievementElement = document.createElement('div');
@@ -1113,11 +1091,11 @@ function loadAchievements() {
             <div class="achievement-icon">${achievement.icon}</div>
             <div class="achievement-name">${achievement.name}</div>
         `;
-
+        
         if (isUnlocked) {
             achievementElement.title = achievement.description;
         }
-
+        
         container.appendChild(achievementElement);
     });
 }
@@ -1138,11 +1116,11 @@ function unlockAchievement(achievementId) {
 
 function getAchievementById(id) {
     const achievements = {
-        'first_order': { name: 'Первый заказ', icon: 'medal', description: 'Вы сделали свой первый заказ!' },
-        'foodie': { name: 'Гурман', icon: 'pizza', description: 'Вы попробовали 10 разных блюд!' },
-        'regular': { name: 'Постоянный клиент', icon: 'star', description: '20 заказов - вы настоящий постоянный клиент!' },
-        'healthy': { name: 'Здоровое питание', icon: 'salad', description: '5 салатов - вы заботитесь о здоровье!' },
-        'sweet_tooth': { name: 'Сладкоежка', icon: 'cake', description: 'Вы попробовали все наши десерты!' }
+        'first_order': { name: 'Первый заказ', icon: '🥇', description: 'Вы сделали свой первый заказ!' },
+        'foodie': { name: 'Гурман', icon: '🍕', description: 'Вы попробовали 10 разных блюд!' },
+        'regular': { name: 'Постоянный клиент', icon: '⭐', description: '20 заказов - вы настоящий постоянный клиент!' },
+        'healthy': { name: 'Здоровое питание', icon: '🥗', description: '5 салатов - вы заботитесь о здоровье!' },
+        'sweet_tooth': { name: 'Сладкоежка', icon: '🍰', description: 'Вы попробовали все наши десерты!' }
     };
     
     return achievements[id];
@@ -1168,33 +1146,32 @@ function showAchievementNotification(achievement) {
 function loadCaloriesChart() {
     const ctx = document.getElementById('caloriesChart');
     if (!ctx) return;
-
+    
     const ctx2d = ctx.getContext('2d');
     if (!ctx2d) return;
-
-    // Очищаем предыдущий график если он существует
-    if (window.caloriesChart) {
-        window.caloriesChart.destroy();
-    }
-
+    
     // Проверяем есть ли данные о заказах
     const hasOrderData = currentUser && currentUser.orders && currentUser.orders.length > 0;
+    
+    if (!hasOrderData) {
+        // If no orders, don't create the chart
+        return;
+    }
 
     const data = {
         labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
         datasets: [{
             label: 'Калории',
-            data: hasOrderData ? [1200, 1900, 1500, 2100, 1800, 2300, 1600] : [0, 0, 0, 0, 0, 0, 0],
+            data: [1200, 1900, 1500, 2100, 1800, 2300, 1600],
             backgroundColor: 'rgba(0, 179, 119, 0.2)',
             borderColor: 'rgba(0, 179, 119, 1)',
             borderWidth: 2,
-            fill: true,
-            tension: 0.4
+            fill: true
         }]
     };
 
     try {
-        window.caloriesChart = new Chart(ctx2d, {
+        new Chart(ctx2d, {
             type: 'line',
             data: data,
             options: {
@@ -1202,43 +1179,18 @@ function loadCaloriesChart() {
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true,
-                        max: hasOrderData ? undefined : 1000,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
+                        beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: {
                         display: false
-                    },
-                    title: {
-                        display: !hasOrderData,
-                        text: 'Нет данных о заказах',
-                        font: {
-                            size: 14
-                        }
                     }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
                 }
             }
         });
     } catch (error) {
         console.error('Ошибка создания графика:', error);
-        // Показываем сообщение об ошибке
-        ctx2d.font = '16px Arial';
-        ctx2d.fillStyle = '#666';
-        ctx2d.textAlign = 'center';
-        ctx2d.fillText('Ошибка загрузки графика', ctx.width / 2, ctx.height / 2);
     }
 }
 
@@ -1289,7 +1241,7 @@ function toggleFavorite(productId) {
     updateFavoriteButton(productId);
     
     if (favorites.has(productId)) {
-        showNotification('Добавлено в избранное', 'success');
+        showNotification('Добавлено в избранное ❤️', 'success');
     }
 }
 
@@ -1300,104 +1252,92 @@ function updateFavoriteButton(productId) {
     }
 }
 
-// Функция выбора категории
-function selectCategory(button) {
-    document.querySelectorAll('.category-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    button.classList.add('active');
-    filterProducts();
-}
-
 // Функции для работы с ассортиментом
 function initializeAssortment() {
     const container = document.getElementById('items-container');
     if (!container) return;
-
-    // Очищаем контейнер и показываем скелетоны загрузки
+    
+    // Показываем скелетоны загрузки
     container.innerHTML = '';
     for (let i = 0; i < 8; i++) {
         const skeleton = document.createElement('div');
         skeleton.className = 'item-card skeleton skeleton-item';
         container.appendChild(skeleton);
     }
-
-    // Загружаем продукты сразу без задержки
+    
+    // Загружаем продукты с задержкой для демонстрации
     setTimeout(() => {
         container.innerHTML = '';
-
-        if (products.length === 0) {
-            container.innerHTML = '<div class="no-results"><i class="fas fa-utensils"></i><h3>Меню временно недоступно</h3><p>Попробуйте зайти позже</p></div>';
-            return;
-        }
-
+        
         products.forEach((product, index) => {
-            const quantity = cart[product.id] || 0;
-            const isFavorite = favorites.has(product.id);
-
-            const itemCard = document.createElement('div');
-            itemCard.className = 'item-card';
-            itemCard.setAttribute('data-category', product.category);
-            itemCard.setAttribute('data-vegetarian', product.isVegetarian);
-            itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
-            itemCard.setAttribute('data-price', product.price);
-            itemCard.setAttribute('data-calories', product.calories);
-
-            itemCard.innerHTML = `
-                ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
-                <button class="favorite-btn ${isFavorite ? 'active' : ''}"
-                        data-product="${product.id}"
-                        onclick="toggleFavorite('${product.id}')">
-                    <i class="fas fa-heart"></i>
-                </button>
-                <div class="item-image">
-                    <i class="${product.icon}"></i>
-                </div>
-                <div class="item-name">${product.name}</div>
-                <div class="item-description">${product.description || ''}</div>
-
-                <!-- Аллергены -->
-                <div class="allergens">
-                    ${product.allergens && product.allergens.length > 0 ? product.allergens.map(allergen => `
-                        <div class="allergen ${allergen}" title="${getAllergenName(allergen)}">
-                            <i class="fas fa-exclamation-circle"></i>
+            setTimeout(() => {
+                const quantity = cart[product.id] || 0;
+                const isFavorite = favorites.has(product.id);
+                
+                const itemCard = document.createElement('div');
+                itemCard.className = 'item-card';
+                itemCard.setAttribute('data-category', product.category);
+                itemCard.setAttribute('data-vegetarian', product.isVegetarian);
+                itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
+                itemCard.setAttribute('data-price', product.price);
+                itemCard.setAttribute('data-calories', product.calories);
+                
+                itemCard.innerHTML = `
+                    ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
+                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                            data-product="${product.id}" 
+                            onclick="toggleFavorite('${product.id}')">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <div class="item-image">
+                        <i class="${product.icon}"></i>
+                    </div>
+                    <div class="item-name">${product.name}</div>
+                    <div class="item-description">${product.description || ''}</div>
+                    
+                    <!-- Аллергены -->
+                    <div class="allergens">
+                        ${product.allergens.map(allergen => `
+                            <div class="allergen ${allergen}" title="${getAllergenName(allergen)}">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- Рейтинг -->
+                    <div class="rating">
+                        ${generateStarRating(product.rating)}
+                    </div>
+                    
+                    <div class="item-price">${product.price} ₴</div>
+                    <div class="item-calories">${product.calories} ккал</div>
+                    <div class="item-actions">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="quantity" id="quantity-${product.id}">${quantity}</span>
+                            <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
+                                <i class="fas fa-plus"></i>
+                            </button>
                         </div>
-                    `).join('') : ''}
-                </div>
-
-                <!-- Рейтинг -->
-                <div class="rating">
-                    ${generateStarRating(product.rating)}
-                </div>
-
-                <div class="item-price">${product.price} ₴</div>
-                <div class="item-calories">${product.calories} ккал</div>
-                <div class="item-actions">
-                    <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <span class="quantity" id="quantity-${product.id}">${quantity}</span>
-                        <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
-                            <i class="fas fa-plus"></i>
+                        <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
+                            <i class="fas fa-cart-plus"></i>
                         </button>
                     </div>
-                    <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
-                        <i class="fas fa-cart-plus"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(itemCard);
-            slideIn(itemCard, 'up');
+                `;
+                container.appendChild(itemCard);
+                slideIn(itemCard, 'up');
+            }, index * 100);
         });
-
+        
         // Инициализация долгого нажатия
         initLongPress();
-
-    }, 500); // Уменьшенная задержка
-
+        
+    }, 1000);
+    
     document.getElementById('search-input').addEventListener('input', filterProducts);
-
+    
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -1405,140 +1345,6 @@ function initializeAssortment() {
             filterProducts();
         });
     });
-
-    // Инициализация быстрой корзины
-    initQuickCart();
-
-    // Запуск системы уведомлений о заказах
-    initOrderNotifications();
-}
-
-// Система уведомлений о готовности заказов
-function initOrderNotifications() {
-    if (!currentUser) return;
-
-    // Проверяем статусы заказов каждые 30 секунд
-    setInterval(checkOrderStatus, 30000);
-
-    // Проверяем при загрузке страницы
-    setTimeout(checkOrderStatus, 5000);
-}
-
-async function checkOrderStatus() {
-    if (!currentUser) return;
-
-    try {
-        const data = await apiRequest('/api/orders/history?limit=10');
-
-        if (data.orders && data.orders.length > 0) {
-            const recentOrders = data.orders.filter(order =>
-                order.status !== 'completed' && order.status !== 'cancelled'
-            );
-
-            recentOrders.forEach(order => {
-                const savedStatus = localStorage.getItem(`order_${order.id}_status`);
-
-                if (savedStatus && savedStatus !== order.status) {
-                    // Статус изменился!
-                    showOrderStatusNotification(order);
-                }
-
-                // Сохраняем текущий статус
-                localStorage.setItem(`order_${order.id}_status`, order.status);
-            });
-        }
-    } catch (error) {
-        console.error('Ошибка проверки статуса заказов:', error);
-    }
-}
-
-function showOrderStatusNotification(order) {
-    const statusMessages = {
-        'confirmed': 'Ваш заказ подтвержден и готовится!',
-        'preparing': 'Ваш заказ начали готовить',
-        'ready': 'Ваш заказ готов! Можете забрать его',
-        'completed': 'Заказ выполнен успешно',
-        'cancelled': 'Заказ был отменен'
-    };
-
-    const message = statusMessages[order.status] || `Статус заказа изменен: ${order.status}`;
-
-    showNotification(message, order.status === 'ready' ? 'success' : 'info');
-
-    // Для готового заказа добавляем звук и вибрацию
-    if (order.status === 'ready') {
-        playNotificationSound();
-        if ('vibrate' in navigator) {
-            navigator.vibrate([200, 100, 200]);
-        }
-    }
-}
-
-function playNotificationSound() {
-    // Создаем аудио элемент для звукового уведомления
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJH
-
-// Быстрая корзина с часто заказываемыми блюдами
-function initQuickCart() {
-    // Получаем часто заказываемые блюда из localStorage
-    const frequentItems = JSON.parse(localStorage.getItem('frequentItems') || '[]');
-
-    if (frequentItems.length > 0) {
-        const quickCartContainer = document.createElement('div');
-        quickCartContainer.id = 'quick-cart';
-        quickCartContainer.className = 'quick-cart';
-        quickCartContainer.innerHTML = `
-            <div class="quick-cart-header">
-                <h4><i class="fas fa-clock"></i> Часто заказываете</h4>
-                <button class="btn-close" onclick="hideQuickCart()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="quick-cart-items">
-                ${frequentItems.slice(0, 4).map(item => {
-                    const product = products.find(p => p.id === item.id);
-                    if (product) {
-                        return `
-                            <div class="quick-cart-item" onclick="addToCart('${product.id}')">
-                                <div class="quick-cart-image">
-                                    <i class="${product.icon}"></i>
-                                </div>
-                                <div class="quick-cart-info">
-                                    <div class="quick-cart-name">${product.name}</div>
-                                    <div class="quick-cart-price">${product.price} ₴</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    return '';
-                }).join('')}
-            </div>
-        `;
-
-        document.body.appendChild(quickCartContainer);
-
-        // Показываем быструю корзину через 2 секунды
-        setTimeout(() => {
-            if (!localStorage.getItem('quickCartHidden')) {
-                showQuickCart();
-            }
-        }, 2000);
-    }
-}
-
-function showQuickCart() {
-    const quickCart = document.getElementById('quick-cart');
-    if (quickCart) {
-        quickCart.classList.add('active');
-    }
-}
-
-function hideQuickCart() {
-    const quickCart = document.getElementById('quick-cart');
-    if (quickCart) {
-        quickCart.classList.remove('active');
-        localStorage.setItem('quickCartHidden', 'true');
-    }
 }
 
 function getAllergenName(allergen) {
@@ -1615,27 +1421,27 @@ function filterProducts() {
     const isVegetarian = document.getElementById('filter-vegetarian')?.checked || false;
     const isGlutenFree = document.getElementById('filter-gluten-free')?.checked || false;
     const maxPrice = parseInt(document.getElementById('price-slider')?.value || 150);
-
+    
     const container = document.getElementById('items-container');
     if (!container) return;
-
+    
     const allItems = container.querySelectorAll('.item-card');
-
+    
     let visibleItems = 0;
-
+    
     allItems.forEach((item, index) => {
         const itemName = item.querySelector('.item-name')?.textContent.toLowerCase() || '';
         const itemCategory = item.getAttribute('data-category') || '';
         const itemVegetarian = item.getAttribute('data-vegetarian') === 'true';
         const itemGlutenFree = item.getAttribute('data-gluten-free') === 'true';
         const itemPrice = parseFloat(item.getAttribute('data-price')) || 0;
-
+        
         const matchesSearch = itemName.includes(searchTerm);
-        const matchesCategory = activeCategory === 'all' || itemCategory === activeCategory;
+        const matchesCategory = activeCategory === 'all' || itemCategory.toLowerCase() === activeCategory.toLowerCase();
         const matchesVegetarian = !isVegetarian || itemVegetarian;
         const matchesGlutenFree = !isGlutenFree || itemGlutenFree;
         const matchesPrice = itemPrice <= maxPrice;
-
+        
         if (matchesSearch && matchesCategory && matchesVegetarian && matchesGlutenFree && matchesPrice) {
             item.style.display = 'block';
             visibleItems++;
@@ -1646,7 +1452,7 @@ function filterProducts() {
             item.style.display = 'none';
         }
     });
-
+    
     // Показываем сообщение если ничего не найдено
     const noResults = document.getElementById('no-results-message');
     if (!noResults && visibleItems === 0 && container.children.length > 0) {
@@ -1662,7 +1468,7 @@ function filterProducts() {
     } else if (noResults && visibleItems > 0) {
         noResults.remove();
     }
-
+    
     highlightSearchText(searchTerm);
 }
 
@@ -2293,85 +2099,85 @@ function startConfetti() {
 function createConfettiAnimation() {
     const confetti = document.createElement('div');
     confetti.className = 'confetti-animation';
-    confetti.innerHTML = 'confetti';
+    confetti.innerHTML = '🎉';
     confetti.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0);
+        transform: translate(-50%, -50%);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        animation: confettiPop 1s ease-out forwards;
     `;
     document.body.appendChild(confetti);
-
+    
     setTimeout(() => {
         confetti.remove();
-    }, 800);
+    }, 1000);
 }
 
 function createSuccessAnimation() {
     const success = document.createElement('div');
     success.className = 'confetti-animation';
-    success.innerHTML = 'success';
+    success.innerHTML = '✅';
     success.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0);
+        transform: translate(-50%, -50%);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        animation: confettiPop 1s ease-out forwards;
     `;
     document.body.appendChild(success);
-
+    
     setTimeout(() => {
         success.remove();
-    }, 800);
+    }, 1000);
 }
 
 function createLoginAnimation() {
     const login = document.createElement('div');
     login.className = 'confetti-animation';
-    login.innerHTML = 'hello';
+    login.innerHTML = '👋';
     login.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0);
+        transform: translate(-50%, -50%);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        animation: confettiPop 1s ease-out forwards;
     `;
     document.body.appendChild(login);
-
+    
     setTimeout(() => {
         login.remove();
-    }, 800);
+    }, 1000);
 }
 
 function createPromoAnimation() {
     const promo = document.createElement('div');
     promo.className = 'confetti-animation';
-    promo.innerHTML = 'gift';
+    promo.innerHTML = '🎁';
     promo.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0);
+        transform: translate(-50%, -50%);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        animation: confettiPop 1s ease-out forwards;
     `;
     document.body.appendChild(promo);
-
+    
     setTimeout(() => {
         promo.remove();
-    }, 800);
+    }, 1000);
 }
 
 // Прогресс-бар готовности заказа
@@ -2650,150 +2456,135 @@ function updateDishTimer() {
 setInterval(updateDishTimer, 60000);
 updateDishTimer();
 
-// Оптимизированная история заказов
-async function loadOrderHistory(limit = 5, containerId = 'order-history-list') {
-    if (!currentUser) {
-        // Если пользователь не загружен, ждем немного и пробуем снова
-        setTimeout(() => loadOrderHistory(limit, containerId), 500);
-        return;
-    }
-
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
+// Улучшенная история заказов
+async function loadOrderHistory() {
+    if (!currentUser) return;
+    
     try {
-        const data = await apiRequest(`/api/orders/history?limit=${limit}`);
-
-        container.innerHTML = '';
-
+        const data = await apiRequest('/api/orders/history?limit=5');
+        
+        const historyContainer = document.getElementById('order-history-list');
+        historyContainer.innerHTML = '';
+        
         if (!data.orders || data.orders.length === 0) {
-            container.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
+            historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
             return;
         }
-
-        // Создаем DocumentFragment для оптимизации DOM
-        const fragment = document.createDocumentFragment();
-
+        
         data.orders.forEach((order, index) => {
-            const orderElement = createOrderElement(order, limit === 5 ? 'compact' : 'detailed');
-            fragment.appendChild(orderElement);
-
-            // Анимируем с задержкой
-            setTimeout(() => slideIn(orderElement, 'up'), index * 50);
+            setTimeout(() => {
+                const orderElement = createOrderElement(order);
+                historyContainer.appendChild(orderElement);
+                slideIn(orderElement, 'up');
+            }, index * 100);
         });
-
-        container.appendChild(fragment);
-
+        
     } catch (error) {
-        console.error('Ошибка загрузки истории заказов:', error);
-        if (container.innerHTML === '') {
-            container.innerHTML = '<div class="no-orders">Ошибка загрузки истории заказов</div>';
-        }
+        console.error('Ошибка загрузки истории:', error);
         showNotification('Ошибка загрузки истории заказов', 'error');
     }
 }
 
 async function loadFullOrderHistory() {
     if (!currentUser) return;
-
+    
     try {
         const offset = (currentOrderPage - 1) * ordersPerPage;
         const data = await apiRequest(`/api/orders/history?limit=${ordersPerPage}&offset=${offset}`);
-
+        
         const historyContainer = document.getElementById('full-order-history-list');
         const paginationContainer = document.getElementById('order-history-pagination');
-
+        
         historyContainer.innerHTML = '';
-
+        
         if (!data.orders || data.orders.length === 0) {
             historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
-            if (paginationContainer) paginationContainer.innerHTML = '';
+            paginationContainer.innerHTML = '';
             return;
         }
-
-        // Создаем DocumentFragment для оптимизации
-        const fragment = document.createDocumentFragment();
-
+        
         data.orders.forEach((order, index) => {
-            const orderElement = createOrderElement(order, 'detailed');
-            fragment.appendChild(orderElement);
-            setTimeout(() => slideIn(orderElement, 'up'), index * 50);
+            setTimeout(() => {
+                const orderElement = createDetailedOrderElement(order);
+                historyContainer.appendChild(orderElement);
+                slideIn(orderElement, 'up');
+            }, index * 100);
         });
-
-        historyContainer.appendChild(fragment);
-
+        
         // Пагинация
-        if (paginationContainer) {
-            updatePagination(paginationContainer, data.total || data.orders.length, ordersPerPage, currentOrderPage);
-        }
-
+        updatePagination(paginationContainer, data.total, ordersPerPage, currentOrderPage);
+        
     } catch (error) {
         console.error('Ошибка загрузки полной истории:', error);
         showNotification('Ошибка загрузки истории заказов', 'error');
     }
 }
 
-// Унифицированная функция создания элементов заказа
-function createOrderElement(order, type = 'compact') {
+function createOrderElement(order) {
     const orderElement = document.createElement('div');
-    orderElement.className = type === 'compact' ? 'order-item' : 'detailed-order-item';
+    orderElement.className = 'order-item';
     orderElement.setAttribute('data-order-id', order.id);
-
+    
+    const itemsText = order.items ? order.items.map(item => 
+        `${item.name} x${item.quantity}`
+    ).join(', ') : 'Заказ';
+    
     const orderDate = new Date(order.created_at);
     const statusClass = getStatusClass(order.status);
-    const dateStr = orderDate.toLocaleDateString('ru-RU');
-    const timeStr = orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+    
+    orderElement.innerHTML = `
+        <div class="order-info">
+            <span class="order-name">${itemsText}</span>
+            <span class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+        </div>
+        <div class="order-meta">
+            <span class="order-status ${statusClass}">${getStatusText(order.status)}</span>
+            <span class="order-price">${order.final_amount} ₴</span>
+        </div>
+    `;
+    
+    orderElement.addEventListener('click', () => showOrderDetails(order.id));
+    return orderElement;
+}
 
-    if (type === 'compact') {
-        // Компактный вид для профиля
-        const itemsText = order.items ? order.items.map(item =>
-            `${item.name} x${item.quantity}`
-        ).join(', ') : 'Заказ';
-
-        orderElement.innerHTML = `
-            <div class="order-info">
-                <span class="order-name">${itemsText}</span>
-                <span class="order-date">${dateStr} ${timeStr}</span>
+function createDetailedOrderElement(order) {
+    const orderElement = document.createElement('div');
+    orderElement.className = 'detailed-order-item';
+    orderElement.setAttribute('data-order-id', order.id);
+    
+    const orderDate = new Date(order.created_at);
+    const statusClass = getStatusClass(order.status);
+    
+    let itemsHtml = '';
+    if (order.items) {
+        itemsHtml = order.items.map(item => `
+            <div class="order-item-detail">
+                <span>${item.name}</span>
+                <span>x${item.quantity}</span>
+                <span>${item.total_price} ₴</span>
             </div>
-            <div class="order-meta">
-                <span class="order-status ${statusClass}">${getStatusText(order.status)}</span>
-                <span class="order-price">${order.final_amount} ₴</span>
-            </div>
-        `;
-    } else {
-        // Детальный вид для страницы истории
-        let itemsHtml = '';
-        if (order.items && order.items.length > 0) {
-            itemsHtml = order.items.map(item => `
-                <div class="order-item-detail">
-                    <span>${item.name}</span>
-                    <span>x${item.quantity}</span>
-                    <span>${item.total_price} ₴</span>
-                </div>
-            `).join('');
-        }
-
-        orderElement.innerHTML = `
-            <div class="order-header">
-                <div class="order-id">Заказ #${order.id.slice(-8)}</div>
-                <div class="order-date">${dateStr} ${timeStr}</div>
-            </div>
-            <div class="order-body">
-                <div class="order-items">
-                    ${itemsHtml || '<div class="no-items">Информация о товарах недоступна</div>'}
-                </div>
-                <div class="order-summary">
-                    <div class="order-total">
-                        <span>Итого:</span>
-                        <span>${order.final_amount} ₴</span>
-                    </div>
-                    <div class="order-status ${statusClass}">${getStatusText(order.status)}</div>
-                </div>
-            </div>
-        `;
+        `).join('');
     }
-
-    // Добавляем обработчик клика
+    
+    orderElement.innerHTML = `
+        <div class="order-header">
+            <div class="order-id">Заказ #${order.id.slice(-8)}</div>
+            <div class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+        <div class="order-body">
+            <div class="order-items">
+                ${itemsHtml}
+            </div>
+            <div class="order-summary">
+                <div class="order-total">
+                    <span>Итого:</span>
+                    <span>${order.final_amount} ₴</span>
+                </div>
+                <div class="order-status ${statusClass}">${getStatusText(order.status)}</div>
+            </div>
+        </div>
+    `;
+    
     orderElement.addEventListener('click', () => showOrderDetails(order.id));
     return orderElement;
 }
@@ -3148,11 +2939,11 @@ function toggleTheme() {
     const body = document.body;
     const themeToggle = document.getElementById('theme-toggle');
     const icon = themeToggle.querySelector('i');
-
-    if (body.classList.contains('dark-theme')) {
-        setTheme('light');
-    } else {
+    
+    if (body.classList.contains('light-theme')) {
         setTheme('dark');
+    } else {
+        setTheme('light');
     }
 }
 
@@ -3160,20 +2951,17 @@ function setTheme(theme) {
     const body = document.body;
     const themeToggle = document.getElementById('theme-toggle');
     const icon = themeToggle.querySelector('i');
-
+    
     body.classList.remove('light-theme', 'dark-theme');
     body.classList.add(theme + '-theme');
-
+    
     if (theme === 'dark') {
         icon.className = 'fas fa-sun';
     } else {
         icon.className = 'fas fa-moon';
     }
-
+    
     localStorage.setItem('theme', theme);
-
-    // Перезагружаем цветовую тему чтобы применить правильные цвета
-    loadColorTheme();
 }
 
 // Загрузка темы при загрузке страницы
@@ -3334,72 +3122,58 @@ function showThemePalette() {
 function applyColorTheme(themeKey) {
     const theme = COLOR_THEMES[themeKey];
     if (!theme) return;
-
-    // Проверяем, не в темной ли теме мы находимся
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    if (isDarkTheme) {
-        showNotification('Цветовые темы недоступны в тёмном режиме', 'warning');
-        return;
-    }
-
+    
     currentColorScheme = themeKey;
-
+    
     // Обновляем CSS переменные
     document.documentElement.style.setProperty('--primary-color', theme.primary);
     document.documentElement.style.setProperty('--primary-dark', theme.primaryDark);
     document.documentElement.style.setProperty('--secondary-color', theme.secondary);
     document.documentElement.style.setProperty('--accent-color', theme.accent);
-
+    
     // Обновляем активную тему в палитре
     document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.remove('active');
     });
     document.querySelector(`.theme-option[data-theme="${themeKey}"]`).classList.add('active');
-
+    
     // Сохраняем в localStorage
     localStorage.setItem('colorTheme', themeKey);
     localStorage.setItem('customTheme', 'false');
-
+    
     showNotification(`Тема "${theme.name}" применена!`, 'success');
-
+    
     // Анимация смены темы
     animateThemeChange();
 }
 
 // Функция применения пользовательской темы
 function applyCustomTheme() {
-    // Проверяем, не в темной ли теме мы находимся
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    if (isDarkTheme) {
-        showNotification('Цветовые темы недоступны в тёмном режиме', 'warning');
-        return;
-    }
-
     const primary = document.getElementById('custom-primary').value;
     const secondary = document.getElementById('custom-secondary').value;
     const accent = document.getElementById('custom-accent').value;
-
+    
     // Рассчитываем тёмные версии цветов
     const primaryDark = shadeColor(primary, -20);
-
+    
     // Применяем цвета
     document.documentElement.style.setProperty('--primary-color', primary);
     document.documentElement.style.setProperty('--primary-dark', primaryDark);
     document.documentElement.style.setProperty('--secondary-color', secondary);
     document.documentElement.style.setProperty('--accent-color', accent);
-
+    
     // Сохраняем кастомные цвета
     localStorage.setItem('customPrimary', primary);
     localStorage.setItem('customSecondary', secondary);
     localStorage.setItem('customAccent', accent);
     localStorage.setItem('customTheme', 'true');
     localStorage.setItem('colorTheme', 'custom');
-
+    
     currentColorScheme = 'custom';
-
+    
     showNotification('Пользовательская тема применена!', 'success');
     animateThemeChange();
-
+    
     // Закрываем модальное окно через секунду
     setTimeout(() => {
         closeModal('theme-palette-modal');
@@ -3450,28 +3224,21 @@ function loadCustomColors() {
 
 // Загрузка сохранённой темы при запуске
 function loadColorTheme() {
-    // Проверяем, не в темной ли теме мы находимся
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    if (isDarkTheme) {
-        // В темной теме не применяем цветовые темы
-        return;
-    }
-
     const savedTheme = localStorage.getItem('colorTheme');
     const isCustomTheme = localStorage.getItem('customTheme') === 'true';
-
+    
     if (isCustomTheme) {
         // Загружаем кастомную тему
         const primary = localStorage.getItem('customPrimary') || '#00b377';
         const secondary = localStorage.getItem('customSecondary') || '#667eea';
         const accent = localStorage.getItem('customAccent') || '#764ba2';
         const primaryDark = shadeColor(primary, -20);
-
+        
         document.documentElement.style.setProperty('--primary-color', primary);
         document.documentElement.style.setProperty('--primary-dark', primaryDark);
         document.documentElement.style.setProperty('--secondary-color', secondary);
         document.documentElement.style.setProperty('--accent-color', accent);
-
+        
         currentColorScheme = 'custom';
     } else if (savedTheme && COLOR_THEMES[savedTheme]) {
         // Загружаем предустановленную тему
@@ -3514,6 +3281,445 @@ function resetToDefaultTheme() {
     showNotification('Тема сброшена к стандартной!', 'info');
 }
 
+// Планировщик питания
+let currentWeekStart = new Date();
+let mealPlan = {}; // { '2025-01-01': { breakfast: productId, lunch: productId, dinner: productId } }
+
+// Инициализация планировщика питания
+function initializeMealPlanner() {
+    // Устанавливаем начало недели на понедельник
+    currentWeekStart = new Date();
+    const day = currentWeekStart.getDay();
+    const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    currentWeekStart.setDate(diff);
+    currentWeekStart.setHours(0, 0, 0, 0);
+
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+    loadMealPlan();
+}
+
+// Загрузка плана питания из localStorage
+function loadMealPlan() {
+    const savedPlan = localStorage.getItem('mealPlan');
+    if (savedPlan) {
+        mealPlan = JSON.parse(savedPlan);
+    }
+}
+
+// Сохранение плана питания в localStorage
+function saveMealPlan() {
+    localStorage.setItem('mealPlan', JSON.stringify(mealPlan));
+}
+
+// Обновление календаря недели
+function updateWeeklyCalendar() {
+    const calendar = document.getElementById('weekly-calendar');
+    if (!calendar) return;
+
+    calendar.innerHTML = '';
+
+    const weekDays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    const mealTypes = [
+        { key: 'breakfast', name: 'Завтрак', icon: 'fas fa-coffee' },
+        { key: 'lunch', name: 'Обед', icon: 'fas fa-utensils' },
+        { key: 'dinner', name: 'Ужин', icon: 'fas fa-moon' }
+    ];
+
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(currentWeekStart);
+        dayDate.setDate(currentWeekStart.getDate() + i);
+        const dateKey = dayDate.toISOString().split('T')[0];
+
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.setAttribute('data-date', dateKey);
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        dayHeader.innerHTML = `
+            <div class="day-name">${weekDays[i]}</div>
+            <div class="day-date">${dayDate.getDate().toString().padStart(2, '0')}.${(dayDate.getMonth() + 1).toString().padStart(2, '0')}</div>
+        `;
+
+        const dayMeals = document.createElement('div');
+        dayMeals.className = 'day-meals';
+
+        mealTypes.forEach(mealType => {
+            const mealSlot = document.createElement('div');
+            mealSlot.className = 'meal-slot';
+            mealSlot.setAttribute('data-meal-type', mealType.key);
+            mealSlot.setAttribute('data-date', dateKey);
+
+            const plannedMeal = mealPlan[dateKey]?.[mealType.key];
+            if (plannedMeal) {
+                const product = products.find(p => p.id === plannedMeal);
+                if (product) {
+                    mealSlot.classList.remove('empty');
+                    mealSlot.classList.add('filled');
+                    mealSlot.innerHTML = `
+                        <i class="${product.icon}"></i>
+                        <span>${product.name}</span>
+                    `;
+                }
+            } else {
+                mealSlot.classList.add('empty');
+                mealSlot.innerHTML = `
+                    <i class="${mealType.icon}"></i>
+                    <span>${mealType.name}</span>
+                `;
+            }
+
+            mealSlot.addEventListener('click', () => openMealSelector(dateKey, mealType.key));
+            dayMeals.appendChild(mealSlot);
+        });
+
+        dayElement.appendChild(dayHeader);
+        dayElement.appendChild(dayMeals);
+        calendar.appendChild(dayElement);
+    }
+
+    updateCurrentWeekDisplay();
+}
+
+// Открытие селектора блюд
+function openMealSelector(dateKey, mealType) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'meal-selector-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Выберите блюдо для ${getMealTypeName(mealType)}</h3>
+                <button class="modal-close" onclick="closeModal('meal-selector-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="meal-search">
+                    <input type="text" id="meal-search-input" placeholder="Поиск блюд..." oninput="filterMealOptions()">
+                </div>
+                <div class="meal-options" id="meal-options">
+                    <!-- Опции блюд будут загружены здесь -->
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Загружаем опции блюд
+    loadMealOptions(dateKey, mealType);
+
+    // Анимация появления
+    setTimeout(() => {
+        const content = modal.querySelector('.modal-content');
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+    }, 10);
+}
+
+// Получение названия типа приема пищи
+function getMealTypeName(mealType) {
+    const names = {
+        'breakfast': 'завтрака',
+        'lunch': 'обеда',
+        'dinner': 'ужина'
+    };
+    return names[mealType] || mealType;
+}
+
+// Загрузка опций блюд
+function loadMealOptions(dateKey, mealType) {
+    const container = document.getElementById('meal-options');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    // Добавляем опцию "Очистить"
+    const clearOption = document.createElement('div');
+    clearOption.className = 'meal-option clear-option';
+    clearOption.innerHTML = `
+        <i class="fas fa-trash"></i>
+        <span>Очистить</span>
+    `;
+    clearOption.addEventListener('click', () => selectMeal(dateKey, mealType, null));
+    container.appendChild(clearOption);
+
+    // Добавляем блюда
+    products.forEach(product => {
+        const option = document.createElement('div');
+        option.className = 'meal-option';
+        option.setAttribute('data-product-id', product.id);
+        option.innerHTML = `
+            <div class="meal-option-content">
+                <i class="${product.icon}"></i>
+                <div class="meal-option-info">
+                    <div class="meal-option-name">${product.name}</div>
+                    <div class="meal-option-details">${product.price} ₴ • ${product.calories} ккал</div>
+                </div>
+            </div>
+        `;
+        option.addEventListener('click', () => selectMeal(dateKey, mealType, product.id));
+        container.appendChild(option);
+    });
+}
+
+// Фильтрация опций блюд
+function filterMealOptions() {
+    const searchTerm = document.getElementById('meal-search-input').value.toLowerCase();
+    const options = document.querySelectorAll('.meal-option:not(.clear-option)');
+
+    options.forEach(option => {
+        const name = option.querySelector('.meal-option-name').textContent.toLowerCase();
+        if (name.includes(searchTerm)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+// Выбор блюда
+function selectMeal(dateKey, mealType, productId) {
+    if (!mealPlan[dateKey]) {
+        mealPlan[dateKey] = {};
+    }
+
+    if (productId) {
+        mealPlan[dateKey][mealType] = productId;
+    } else {
+        delete mealPlan[dateKey][mealType];
+        // Если день пустой, удаляем его из плана
+        if (Object.keys(mealPlan[dateKey]).length === 0) {
+            delete mealPlan[dateKey];
+        }
+    }
+
+    saveMealPlan();
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+    closeModal('meal-selector-modal');
+
+    if (productId) {
+        const product = products.find(p => p.id === productId);
+        showNotification(`"${product.name}" добавлено в план!`, 'success');
+    } else {
+        showNotification('Блюдо удалено из плана', 'info');
+    }
+}
+
+// Генерация плана питания
+function generateMealPlan() {
+    if (products.length === 0) {
+        showNotification('Нет доступных блюд для генерации плана', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    // Очищаем текущий план
+    mealPlan = {};
+
+    // Генерируем план на неделю
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(currentWeekStart);
+        dayDate.setDate(currentWeekStart.getDate() + i);
+        const dateKey = dayDate.toISOString().split('T')[0];
+
+        mealPlan[dateKey] = {};
+
+        // Выбираем случайные блюда для каждого приема пищи
+        const mealTypes = ['breakfast', 'lunch', 'dinner'];
+        mealTypes.forEach(mealType => {
+            // Фильтруем блюда по типу (завтрак - менее калорийные, обед - основные, ужин - легкие)
+            let suitableProducts = products;
+
+            if (mealType === 'breakfast') {
+                suitableProducts = products.filter(p => p.calories < 400);
+            } else if (mealType === 'dinner') {
+                suitableProducts = products.filter(p => p.calories < 600);
+            }
+
+            if (suitableProducts.length > 0) {
+                const randomProduct = suitableProducts[Math.floor(Math.random() * suitableProducts.length)];
+                mealPlan[dateKey][mealType] = randomProduct.id;
+            }
+        });
+    }
+
+    saveMealPlan();
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+
+    showLoading(false);
+    showNotification('План питания сгенерирован!', 'success');
+}
+
+// Очистка плана питания
+function clearMealPlan() {
+    mealPlan = {};
+    saveMealPlan();
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+    showNotification('План питания очищен', 'info');
+}
+
+// Заказ недельного плана
+function orderWeeklyPlan() {
+    if (Object.keys(mealPlan).length === 0) {
+        showNotification('План питания пуст', 'error');
+        return;
+    }
+
+    if (!currentUser) {
+        showNotification('Необходимо войти в систему', 'error');
+        goTo('login');
+        return;
+    }
+
+    // Собираем все блюда из плана
+    const weeklyItems = {};
+    let totalCost = 0;
+    let totalCalories = 0;
+
+    Object.values(mealPlan).forEach(dayMeals => {
+        Object.values(dayMeals).forEach(productId => {
+            if (!weeklyItems[productId]) {
+                weeklyItems[productId] = 0;
+            }
+            weeklyItems[productId]++;
+
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                totalCost += product.price;
+                totalCalories += product.calories;
+            }
+        });
+    });
+
+    // Проверяем баланс
+    if (currentUser.balance < totalCost) {
+        showNotification('Недостаточно средств на балансе', 'error');
+        goTo('payment');
+        return;
+    }
+
+    // Создаем заказ
+    const orderItems = Object.entries(weeklyItems).map(([productId, quantity]) => {
+        const product = products.find(p => p.id === productId);
+        return {
+            meal_id: productId,
+            quantity: quantity,
+            unit_price: product.price,
+            total_price: product.price * quantity
+        };
+    });
+
+    // Отправляем заказ
+    placeWeeklyOrder(orderItems, totalCost, totalCalories);
+}
+
+// Размещение недельного заказа
+async function placeWeeklyOrder(orderItems, totalCost, totalCalories) {
+    showLoading(true);
+
+    try {
+        const data = await apiRequest('/api/orders', {
+            method: 'POST',
+            body: {
+                items: orderItems,
+                total_amount: totalCost,
+                discount_amount: 0,
+                final_amount: totalCost
+            }
+        });
+
+        // Обновляем баланс
+        currentUser.balance -= totalCost;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // Очищаем план после успешного заказа
+        clearMealPlan();
+
+        showNotification(`Недельный план заказан! Общая стоимость: ${totalCost} ₴`, 'success');
+        goTo('Thx');
+
+    } catch (error) {
+        console.error('Ошибка заказа недельного плана:', error);
+        showNotification('Ошибка оформления заказа', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Навигация по неделям
+function previousWeek() {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+}
+
+function nextWeek() {
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    updateWeeklyCalendar();
+    updateWeeklyStats();
+}
+
+// Обновление отображения текущей недели
+function updateCurrentWeekDisplay() {
+    const weekElement = document.getElementById('current-week');
+    if (!weekElement) return;
+
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(currentWeekStart.getDate() + 6);
+
+    const formatDate = (date) => {
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'short'
+        });
+    };
+
+    weekElement.textContent = `${formatDate(currentWeekStart)} - ${formatDate(weekEnd)}`;
+}
+
+// Обновление статистики недели
+function updateWeeklyStats() {
+    const caloriesElement = document.getElementById('weekly-calories');
+    const costElement = document.getElementById('weekly-cost');
+    const daysElement = document.getElementById('planned-days');
+
+    if (!caloriesElement || !costElement || !daysElement) return;
+
+    let totalCalories = 0;
+    let totalCost = 0;
+    let plannedDays = 0;
+
+    Object.values(mealPlan).forEach(dayMeals => {
+        if (Object.keys(dayMeals).length > 0) {
+            plannedDays++;
+        }
+
+        Object.values(dayMeals).forEach(productId => {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                totalCalories += product.calories;
+                totalCost += product.price;
+            }
+        });
+    });
+
+    caloriesElement.textContent = totalCalories.toLocaleString();
+    costElement.textContent = `${totalCost.toFixed(2)} ₴`;
+    daysElement.textContent = `${plannedDays}/7`;
+}
+
+// Инициализация планировщика при переходе на страницу
+function initMealPlannerPage() {
+    initializeMealPlanner();
+}
+
 // CSS для анимации смены темы
 const themeAnimationCSS = `
 <style>
@@ -3536,215 +3742,88 @@ const themeAnimationCSS = `
 .theme-pulse {
     animation: themePulse 0.5s ease;
 }
+
+/* Стили для селектора блюд */
+.meal-search {
+    margin-bottom: 20px;
+}
+
+.meal-search input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1em;
+    background: var(--card-bg);
+    color: var(--text-dark);
+}
+
+.meal-search input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.meal-options {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.meal-option {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--card-bg);
+}
+
+.meal-option:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.meal-option.clear-option {
+    background: #ffe6e6;
+    border-color: #ff6b6b;
+}
+
+.meal-option.clear-option:hover {
+    background: #ff6b6b;
+    color: var(--white);
+}
+
+.meal-option-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.meal-option i {
+    font-size: 1.5em;
+    color: var(--primary-color);
+}
+
+.meal-option-info {
+    flex: 1;
+}
+
+.meal-option-name {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.meal-option-details {
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-top: 2px;
+}
 </style>
 `;
 
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
-
-// Функция для создания эффекта жидкого стекла
-function applyLiquidGlassEffect() {
-    // Добавляем классы жидкого стекла к основным элементам
-    document.querySelectorAll('.item-card, .profile-card, .cart-summary, .form-container').forEach(el => {
-        el.classList.add('glass-morphism');
-    });
-
-    // Добавляем градиентный фон к body
-    const currentTheme = COLOR_THEMES[currentColorScheme] || COLOR_THEMES['emerald'];
-    document.body.style.background = `
-        linear-gradient(135deg,
-            ${currentTheme.primary}15 0%,
-            ${currentTheme.secondary}10 25%,
-            ${currentTheme.accent}15 50%,
-            ${currentTheme.primary}10 75%,
-            ${currentTheme.secondary}15 100%
-        ),
-        linear-gradient(45deg,
-            rgba(255,255,255,0.05) 0%,
-            rgba(255,255,255,0.02) 50%,
-            rgba(255,255,255,0.05) 100%
-        )
-    `;
-    document.body.style.backgroundSize = '400% 400%, 200% 200%';
-    document.body.style.animation = 'gradientShift 20s ease infinite, shimmer 8s ease-in-out infinite alternate';
-}
-
-// Функция для создания эффектов входа/регистрации
-function createLoginEffects() {
-    // Эффект появления формы
-    const formContainer = document.querySelector('.form-container');
-    if (formContainer) {
-        formContainer.style.animation = 'liquidMorph 1.5s ease-out';
-    }
-
-    // Частицы вокруг формы
-    createFloatingParticles();
-
-    // Звук приветствия (если поддерживается)
-    if ('speechSynthesis' in window) {
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance('Добро пожаловать в РНЛ Еда!');
-            utterance.lang = 'ru-RU';
-            utterance.rate = 0.8;
-            utterance.pitch = 1.2;
-            speechSynthesis.speak(utterance);
-        }, 1000);
-    }
-}
-
-function createFloatingParticles() {
-    const container = document.createElement('div');
-    container.className = 'floating-particles';
-    container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1;
-    `;
-
-    for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'floating-particle';
-        particle.style.cssText = `
-            position: absolute;
-            width: ${Math.random() * 6 + 2}px;
-            height: ${Math.random() * 6 + 2}px;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            border-radius: 50%;
-            left: ${Math.random() * 100}%;
-            top: ${Math.random() * 100}%;
-            animation: floatParticle ${Math.random() * 10 + 10}s linear infinite;
-            opacity: ${Math.random() * 0.5 + 0.2};
-        `;
-        container.appendChild(particle);
-    }
-
-    document.body.appendChild(container);
-
-    setTimeout(() => {
-        container.remove();
-    }, 15000);
-}
-
-// Анимация морфинга формы
-const liquidMorphCSS = `
-<style>
-@keyframes liquidMorph {
-    0% {
-        transform: scale(0.8) rotate(-5deg);
-        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.05) rotate(2deg);
-        border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
-    }
-    100% {
-        transform: scale(1) rotate(0deg);
-        border-radius: 12px;
-        opacity: 1;
-    }
-}
-
-@keyframes floatParticle {
-    0% {
-        transform: translateY(0px) translateX(0px) rotate(0deg);
-    }
-    33% {
-        transform: translateY(-20px) translateX(10px) rotate(120deg);
-    }
-    66% {
-        transform: translateY(-10px) translateX(-10px) rotate(240deg);
-    }
-    100% {
-        transform: translateY(-30px) translateX(0px) rotate(360deg);
-    }
-}
-
-.form-container {
-    animation-fill-mode: both;
-}
-</style>
-`;
-
-// Добавляем CSS для жидкого морфинга
-document.head.insertAdjacentHTML('beforeend', liquidMorphCSS);
-
-// Оптимизированная инициализация эффектов
-let effectsInitialized = false;
-
-function initPerformanceOptimizedEffects() {
-    if (effectsInitialized) return;
-    effectsInitialized = true;
-
-    // Применяем эффекты жидкого стекла только один раз
-    requestAnimationFrame(() => {
-        applyLiquidGlassEffect();
-        addExtraAnimations();
-    });
-}
-
-// Инициализация эффектов при загрузке (оптимизированная)
-document.addEventListener('DOMContentLoaded', function() {
-    // Откладываем тяжелые эффекты до завершения загрузки
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(initPerformanceOptimizedEffects, { timeout: 2000 });
-    } else {
-        setTimeout(initPerformanceOptimizedEffects, 100);
-    }
-
-    // Добавляем эффекты к формам входа/регистрации (оптимизировано)
-    document.addEventListener('transitionend', function(e) {
-        if ((e.target.id === 'login' || e.target.id === 'register-modal') && e.target.classList.contains('active')) {
-            createLoginEffects();
-        }
-    }, true); // Используем делегирование событий
-});
-
-// Обновляем эффекты при смене темы (оптимизировано)
-const originalApplyColorTheme = applyColorTheme;
-applyColorTheme = function(themeKey) {
-    originalApplyColorTheme(themeKey);
-    requestAnimationFrame(applyLiquidGlassEffect);
-};
-
-const originalApplyCustomTheme = applyCustomTheme;
-applyCustomTheme = function() {
-    originalApplyCustomTheme();
-    requestAnimationFrame(applyLiquidGlassEffect);
-};
-
-// Оптимизированная функция дополнительных анимаций
-function addExtraAnimations() {
-    const cards = document.querySelectorAll('.item-card');
-    const buttons = document.querySelectorAll('.btn-primary, .btn-secondary');
-    const profileCards = document.querySelectorAll('.profile-card');
-
-    // Используем DocumentFragment для оптимизации DOM
-    const fragment = document.createDocumentFragment();
-
-    // Анимация появления карточек товаров (оптимизировано)
-    cards.forEach((card, index) => {
-        if (index < 20) { // Ограничиваем количество анимированных элементов
-            card.style.animationDelay = `${index * 0.05}s`;
-            card.classList.add('stagger-animation');
-        }
-    });
-
-    // Анимация кнопок (оптимизировано)
-    buttons.forEach(btn => {
-        btn.classList.add('micro-interactions');
-    });
-
-    // Эффект глубины для карточек (оптимизировано)
-    profileCards.forEach(card => {
-        card.classList.add('depth-shadow');
-    });
-}
-
-// Функция selectCategory была определена выше, но вызывается из HTML
-// Убедимся, что она доступна глобально
-window.selectCategory = selectCategory;
