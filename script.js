@@ -1300,6 +1300,15 @@ function updateFavoriteButton(productId) {
     }
 }
 
+// Функция выбора категории
+function selectCategory(button) {
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    button.classList.add('active');
+    filterProducts();
+}
+
 // Функции для работы с ассортиментом
 function initializeAssortment() {
     const container = document.getElementById('items-container');
@@ -2641,145 +2650,150 @@ function updateDishTimer() {
 setInterval(updateDishTimer, 60000);
 updateDishTimer();
 
-// Улучшенная история заказов
-async function loadOrderHistory() {
+// Оптимизированная история заказов
+async function loadOrderHistory(limit = 5, containerId = 'order-history-list') {
     if (!currentUser) {
         // Если пользователь не загружен, ждем немного и пробуем снова
-        setTimeout(() => loadOrderHistory(), 500);
+        setTimeout(() => loadOrderHistory(limit, containerId), 500);
         return;
     }
 
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
     try {
-        const data = await apiRequest('/api/orders/history?limit=5');
+        const data = await apiRequest(`/api/orders/history?limit=${limit}`);
 
-        const historyContainer = document.getElementById('order-history-list');
-        if (!historyContainer) return;
-
-        historyContainer.innerHTML = '';
+        container.innerHTML = '';
 
         if (!data.orders || data.orders.length === 0) {
-            historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
+            container.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
             return;
         }
 
+        // Создаем DocumentFragment для оптимизации DOM
+        const fragment = document.createDocumentFragment();
+
         data.orders.forEach((order, index) => {
-            setTimeout(() => {
-                const orderElement = createOrderElement(order);
-                historyContainer.appendChild(orderElement);
-                slideIn(orderElement, 'up');
-            }, index * 100);
+            const orderElement = createOrderElement(order, limit === 5 ? 'compact' : 'detailed');
+            fragment.appendChild(orderElement);
+
+            // Анимируем с задержкой
+            setTimeout(() => slideIn(orderElement, 'up'), index * 50);
         });
 
+        container.appendChild(fragment);
+
     } catch (error) {
-        console.error('Ошибка загрузки истории:', error);
-        // Показываем сообщение об ошибке только если это не первый запуск
-        const historyContainer = document.getElementById('order-history-list');
-        if (historyContainer && historyContainer.innerHTML === '') {
-            historyContainer.innerHTML = '<div class="no-orders">Ошибка загрузки истории заказов</div>';
+        console.error('Ошибка загрузки истории заказов:', error);
+        if (container.innerHTML === '') {
+            container.innerHTML = '<div class="no-orders">Ошибка загрузки истории заказов</div>';
         }
+        showNotification('Ошибка загрузки истории заказов', 'error');
     }
 }
 
 async function loadFullOrderHistory() {
     if (!currentUser) return;
-    
+
     try {
         const offset = (currentOrderPage - 1) * ordersPerPage;
         const data = await apiRequest(`/api/orders/history?limit=${ordersPerPage}&offset=${offset}`);
-        
+
         const historyContainer = document.getElementById('full-order-history-list');
         const paginationContainer = document.getElementById('order-history-pagination');
-        
+
         historyContainer.innerHTML = '';
-        
+
         if (!data.orders || data.orders.length === 0) {
             historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
-            paginationContainer.innerHTML = '';
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
-        
+
+        // Создаем DocumentFragment для оптимизации
+        const fragment = document.createDocumentFragment();
+
         data.orders.forEach((order, index) => {
-            setTimeout(() => {
-                const orderElement = createDetailedOrderElement(order);
-                historyContainer.appendChild(orderElement);
-                slideIn(orderElement, 'up');
-            }, index * 100);
+            const orderElement = createOrderElement(order, 'detailed');
+            fragment.appendChild(orderElement);
+            setTimeout(() => slideIn(orderElement, 'up'), index * 50);
         });
-        
+
+        historyContainer.appendChild(fragment);
+
         // Пагинация
-        updatePagination(paginationContainer, data.total, ordersPerPage, currentOrderPage);
-        
+        if (paginationContainer) {
+            updatePagination(paginationContainer, data.total || data.orders.length, ordersPerPage, currentOrderPage);
+        }
+
     } catch (error) {
         console.error('Ошибка загрузки полной истории:', error);
         showNotification('Ошибка загрузки истории заказов', 'error');
     }
 }
 
-function createOrderElement(order) {
+// Унифицированная функция создания элементов заказа
+function createOrderElement(order, type = 'compact') {
     const orderElement = document.createElement('div');
-    orderElement.className = 'order-item';
+    orderElement.className = type === 'compact' ? 'order-item' : 'detailed-order-item';
     orderElement.setAttribute('data-order-id', order.id);
-    
-    const itemsText = order.items ? order.items.map(item => 
-        `${item.name} x${item.quantity}`
-    ).join(', ') : 'Заказ';
-    
-    const orderDate = new Date(order.created_at);
-    const statusClass = getStatusClass(order.status);
-    
-    orderElement.innerHTML = `
-        <div class="order-info">
-            <span class="order-name">${itemsText}</span>
-            <span class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
-        </div>
-        <div class="order-meta">
-            <span class="order-status ${statusClass}">${getStatusText(order.status)}</span>
-            <span class="order-price">${order.final_amount} ₴</span>
-        </div>
-    `;
-    
-    orderElement.addEventListener('click', () => showOrderDetails(order.id));
-    return orderElement;
-}
 
-function createDetailedOrderElement(order) {
-    const orderElement = document.createElement('div');
-    orderElement.className = 'detailed-order-item';
-    orderElement.setAttribute('data-order-id', order.id);
-    
     const orderDate = new Date(order.created_at);
     const statusClass = getStatusClass(order.status);
-    
-    let itemsHtml = '';
-    if (order.items) {
-        itemsHtml = order.items.map(item => `
-            <div class="order-item-detail">
-                <span>${item.name}</span>
-                <span>x${item.quantity}</span>
-                <span>${item.total_price} ₴</span>
+    const dateStr = orderDate.toLocaleDateString('ru-RU');
+    const timeStr = orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+
+    if (type === 'compact') {
+        // Компактный вид для профиля
+        const itemsText = order.items ? order.items.map(item =>
+            `${item.name} x${item.quantity}`
+        ).join(', ') : 'Заказ';
+
+        orderElement.innerHTML = `
+            <div class="order-info">
+                <span class="order-name">${itemsText}</span>
+                <span class="order-date">${dateStr} ${timeStr}</span>
             </div>
-        `).join('');
-    }
-    
-    orderElement.innerHTML = `
-        <div class="order-header">
-            <div class="order-id">Заказ #${order.id.slice(-8)}</div>
-            <div class="order-date">${orderDate.toLocaleDateString('ru-RU')} ${orderDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</div>
-        </div>
-        <div class="order-body">
-            <div class="order-items">
-                ${itemsHtml}
+            <div class="order-meta">
+                <span class="order-status ${statusClass}">${getStatusText(order.status)}</span>
+                <span class="order-price">${order.final_amount} ₴</span>
             </div>
-            <div class="order-summary">
-                <div class="order-total">
-                    <span>Итого:</span>
-                    <span>${order.final_amount} ₴</span>
+        `;
+    } else {
+        // Детальный вид для страницы истории
+        let itemsHtml = '';
+        if (order.items && order.items.length > 0) {
+            itemsHtml = order.items.map(item => `
+                <div class="order-item-detail">
+                    <span>${item.name}</span>
+                    <span>x${item.quantity}</span>
+                    <span>${item.total_price} ₴</span>
                 </div>
-                <div class="order-status ${statusClass}">${getStatusText(order.status)}</div>
+            `).join('');
+        }
+
+        orderElement.innerHTML = `
+            <div class="order-header">
+                <div class="order-id">Заказ #${order.id.slice(-8)}</div>
+                <div class="order-date">${dateStr} ${timeStr}</div>
             </div>
-        </div>
-    `;
-    
+            <div class="order-body">
+                <div class="order-items">
+                    ${itemsHtml || '<div class="no-items">Информация о товарах недоступна</div>'}
+                </div>
+                <div class="order-summary">
+                    <div class="order-total">
+                        <span>Итого:</span>
+                        <span>${order.final_amount} ₴</span>
+                    </div>
+                    <div class="order-status ${statusClass}">${getStatusText(order.status)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Добавляем обработчик клика
     orderElement.addEventListener('click', () => showOrderDetails(order.id));
     return orderElement;
 }
@@ -3527,3 +3541,186 @@ const themeAnimationCSS = `
 
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
+
+// Функция для создания эффекта жидкого стекла
+function applyLiquidGlassEffect() {
+    // Добавляем классы жидкого стекла к основным элементам
+    document.querySelectorAll('.item-card, .profile-card, .cart-summary, .form-container').forEach(el => {
+        el.classList.add('glass-morphism');
+    });
+
+    // Добавляем градиентный фон к body
+    const currentTheme = COLOR_THEMES[currentColorScheme] || COLOR_THEMES['emerald'];
+    document.body.style.background = `
+        linear-gradient(135deg,
+            ${currentTheme.primary}15 0%,
+            ${currentTheme.secondary}10 25%,
+            ${currentTheme.accent}15 50%,
+            ${currentTheme.primary}10 75%,
+            ${currentTheme.secondary}15 100%
+        ),
+        linear-gradient(45deg,
+            rgba(255,255,255,0.05) 0%,
+            rgba(255,255,255,0.02) 50%,
+            rgba(255,255,255,0.05) 100%
+        )
+    `;
+    document.body.style.backgroundSize = '400% 400%, 200% 200%';
+    document.body.style.animation = 'gradientShift 20s ease infinite, shimmer 8s ease-in-out infinite alternate';
+}
+
+// Функция для создания эффектов входа/регистрации
+function createLoginEffects() {
+    // Эффект появления формы
+    const formContainer = document.querySelector('.form-container');
+    if (formContainer) {
+        formContainer.style.animation = 'liquidMorph 1.5s ease-out';
+    }
+
+    // Частицы вокруг формы
+    createFloatingParticles();
+
+    // Звук приветствия (если поддерживается)
+    if ('speechSynthesis' in window) {
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance('Добро пожаловать в РНЛ Еда!');
+            utterance.lang = 'ru-RU';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.2;
+            speechSynthesis.speak(utterance);
+        }, 1000);
+    }
+}
+
+function createFloatingParticles() {
+    const container = document.createElement('div');
+    container.className = 'floating-particles';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    `;
+
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        particle.style.cssText = `
+            position: absolute;
+            width: ${Math.random() * 6 + 2}px;
+            height: ${Math.random() * 6 + 2}px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation: floatParticle ${Math.random() * 10 + 10}s linear infinite;
+            opacity: ${Math.random() * 0.5 + 0.2};
+        `;
+        container.appendChild(particle);
+    }
+
+    document.body.appendChild(container);
+
+    setTimeout(() => {
+        container.remove();
+    }, 15000);
+}
+
+// Анимация морфинга формы
+const liquidMorphCSS = `
+<style>
+@keyframes liquidMorph {
+    0% {
+        transform: scale(0.8) rotate(-5deg);
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05) rotate(2deg);
+        border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        border-radius: 12px;
+        opacity: 1;
+    }
+}
+
+@keyframes floatParticle {
+    0% {
+        transform: translateY(0px) translateX(0px) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-20px) translateX(10px) rotate(120deg);
+    }
+    66% {
+        transform: translateY(-10px) translateX(-10px) rotate(240deg);
+    }
+    100% {
+        transform: translateY(-30px) translateX(0px) rotate(360deg);
+    }
+}
+
+.form-container {
+    animation-fill-mode: both;
+}
+</style>
+`;
+
+// Добавляем CSS для жидкого морфинга
+document.head.insertAdjacentHTML('beforeend', liquidMorphCSS);
+
+// Инициализация эффектов при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    // Применяем эффекты жидкого стекла
+    setTimeout(applyLiquidGlassEffect, 1000);
+
+    // Добавляем эффекты к формам входа/регистрации
+    document.querySelectorAll('.screen').forEach(screen => {
+        if (screen.id === 'login' || screen.id === 'register-modal') {
+            screen.addEventListener('transitionend', function() {
+                if (this.classList.contains('active')) {
+                    createLoginEffects();
+                }
+            });
+        }
+    });
+});
+
+// Обновляем эффекты при смене темы
+const originalApplyColorTheme = applyColorTheme;
+applyColorTheme = function(themeKey) {
+    originalApplyColorTheme(themeKey);
+    setTimeout(applyLiquidGlassEffect, 500);
+};
+
+const originalApplyCustomTheme = applyCustomTheme;
+applyCustomTheme = function() {
+    originalApplyCustomTheme();
+    setTimeout(applyLiquidGlassEffect, 500);
+};
+
+// Добавляем дополнительные анимации
+function addExtraAnimations() {
+    // Анимация появления карточек товаров
+    document.querySelectorAll('.item-card').forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('stagger-animation');
+    });
+
+    // Анимация кнопок
+    document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+        btn.classList.add('micro-interactions');
+    });
+
+    // Эффект глубины для карточек
+    document.querySelectorAll('.item-card, .profile-card').forEach(card => {
+        card.classList.add('depth-shadow');
+    });
+}
+
+// Запускаем дополнительные анимации
+setTimeout(addExtraAnimations, 2000);
