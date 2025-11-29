@@ -544,25 +544,67 @@ app.get('/api/admin/orders', authenticateToken, requireAdmin, async (req, res) =
 
 // Обновление статуса заказа
 app.put('/api/admin/orders/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+
         const { id } = req.params;
         const { status } = req.body;
-        
-        const result = await pool.query(`
-            UPDATE orders 
+
+        // Получаем текущий заказ
+        const orderResult = await client.query(`
+            SELECT * FROM orders WHERE id = $1
+        `, [id]);
+
+        if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const order = orderResult.rows[0];
+
+        // Если статус меняется на "отменен" и заказ не был отменен ранее
+        if (status === 'cancelled' && order.status !== 'cancelled') {
+            // Возвращаем деньги пользователю
+            await client.query(`
+                UPDATE profiles
+                SET balance = balance + $1
+                WHERE user_id = $2
+            `, [order.final_amount, order.user_id]);
+        }
+        // Если статус меняется с "отменен" на другой статус
+        else if (order.status === 'cancelled' && status !== 'cancelled') {
+            // Списываем деньги обратно (если заказ был отменен, но теперь восстанавливается)
+            const userResult = await client.query('SELECT balance FROM profiles WHERE user_id = $1', [order.user_id]);
+            if (userResult.rows.length === 0 || parseFloat(userResult.rows[0].balance) < order.final_amount) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'Недостаточно средств на балансе пользователя для восстановления заказа' });
+            }
+
+            await client.query(`
+                UPDATE profiles
+                SET balance = balance - $1
+                WHERE user_id = $2
+            `, [order.final_amount, order.user_id]);
+        }
+
+        // Обновляем статус заказа
+        const updateResult = await client.query(`
+            UPDATE orders
             SET status = $1, updated_at = NOW()
             WHERE id = $2
             RETURNING *
         `, [status, id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-        
-        res.json(result.rows[0]);
+
+        await client.query('COMMIT');
+        res.json(updateResult.rows[0]);
+
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error updating order status:', error);
         res.status(500).json({ error: 'Ошибка обновления статуса заказа' });
+    } finally {
+        client.release();
     }
 });
 
