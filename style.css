@@ -1688,9 +1688,9 @@
             box-shadow: var(--shadow);
             position: fixed;
             right: 20px;
-            bottom: 20px;
+            top: 100px;
             width: 350px;
-            max-height: 80vh;
+            max-height: calc(100vh - 120px);
             overflow-y: auto;
             display: none;
             border: 1px solid var(--border);

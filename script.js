@@ -19,8 +19,20 @@ let isHighContrast = false;
 let voiceRecognition = null;
 let konamiCode = [];
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
-let currentWeekStart = new Date();
-let mealPlan = {};
+
+// Инициализация переменных планировщика питания
+let currentWeekStart;
+let mealPlan;
+
+// Функция инициализации переменных планировщика
+function initializeMealPlannerVariables() {
+    if (typeof currentWeekStart === 'undefined') {
+        currentWeekStart = new Date();
+    }
+    if (typeof mealPlan === 'undefined') {
+        mealPlan = {};
+    }
+}
 
 
 
@@ -238,6 +250,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 async function initializeApp() {
+    // Инициализируем переменные планировщика питания
+    initializeMealPlannerVariables();
+
     loadTheme();
     loadColorTheme();
     await loadUserData();
@@ -257,13 +272,14 @@ async function initializeApp() {
     initScrollProgress();
     initScrollToTop();
     initExitPopup();
+    initAvatarUpload();
     loadAvatar();
-    
+
     // Анимация появления элементов
     document.querySelectorAll('.screen.active .hero, .screen.active .form-container').forEach(el => {
         slideIn(el, 'up');
     });
-    
+
     if (!localStorage.getItem('visited')) {
         showNotification('Добро пожаловать в РНЛ ЕДА! Используйте промокод WELCOME10 для скидки 10%', 'success');
         localStorage.setItem('visited', 'true');
@@ -1034,39 +1050,41 @@ async function saveProfile() {
 }
 
 // Загрузка аватара
-const avatarInput = document.getElementById('avatar-input');
-if (avatarInput) {
-    avatarInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // Проверка размера файла
-            if (file.size > 2 * 1024 * 1024) { // 2MB
-                showNotification('Файл слишком большой. Максимальный размер: 2MB', 'error');
-                return;
+function initAvatarUpload() {
+    const avatarInput = document.getElementById('avatar-input');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Проверка размера файла
+                if (file.size > 2 * 1024 * 1024) { // 2MB
+                    showNotification('Файл слишком большой. Максимальный размер: 2MB', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatarPreview = document.getElementById('avatar-preview');
+                    if (avatarPreview) {
+                        avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    }
+
+                    // Сохраняем в localStorage для текущего пользователя
+                    if (currentUser) {
+                        currentUser.avatar = e.target.result;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    localStorage.setItem(`avatar_${currentUser?.username}`, e.target.result);
+
+                    showNotification('Аватар успешно обновлен', 'success');
+                };
+                reader.onerror = function() {
+                    showNotification('Ошибка загрузки изображения', 'error');
+                };
+                reader.readAsDataURL(file);
             }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const avatarPreview = document.getElementById('avatar-preview');
-                if (avatarPreview) {
-                    avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-                }
-
-                // Сохраняем в localStorage для текущего пользователя
-                if (currentUser) {
-                    currentUser.avatar = e.target.result;
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                }
-                localStorage.setItem(`avatar_${currentUser?.username}`, e.target.result);
-
-                showNotification('Аватар успешно обновлен', 'success');
-            };
-            reader.onerror = function() {
-                showNotification('Ошибка загрузки изображения', 'error');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+        });
+    }
 }
 
 // Загрузка аватара при инициализации
@@ -3114,11 +3132,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Функция показа палитры тем
 function showThemePalette() {
     const grid = document.getElementById('theme-palette-grid');
+    if (!grid) return;
+
     grid.innerHTML = '';
-    
+
     Object.entries(COLOR_THEMES).forEach(([key, theme]) => {
         const themeOption = document.createElement('div');
         themeOption.className = `theme-option theme-${key} ${currentColorScheme === key ? 'active' : ''}`;
@@ -3131,14 +3150,14 @@ function showThemePalette() {
                 <div class="color-dot" style="background: ${theme.accent}"></div>
             </div>
         `;
-        
+
         themeOption.addEventListener('click', () => applyColorTheme(key));
         grid.appendChild(themeOption);
     });
-    
+
     // Загружаем сохранённые кастомные цвета
     loadCustomColors();
-    
+
     openModal('theme-palette-modal');
 }
 
