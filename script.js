@@ -2833,7 +2833,7 @@ function createAdminOrderElement(order) {
             <div class="order-meta">
                 <span class="order-id">#${order.id.slice(-8)}</span>
                 <span class="order-date">${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
-                <select class="status-select" onchange="updateOrderStatus('${order.id}', this.value)">
+                <select class="status-select" onchange="updateOrderStatus('${order.id}', this.value, this)">
                     <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Ожидание</option>
                     <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Подтвержден</option>
                     <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Готовится</option>
@@ -2848,28 +2848,27 @@ function createAdminOrderElement(order) {
     return orderElement;
 }
 
-async function updateOrderStatus(orderId, status) {
+async function updateOrderStatus(orderId, status, selectElement) {
     try {
         await apiRequest(`/api/admin/orders/${orderId}/status`, {
             method: 'PUT',
             body: { status }
         });
-        
+
         showNotification('Статус заказа обновлен', 'success');
-        
+
         // Анимация обновления
-        const select = event.target;
-        select.style.backgroundColor = '#00b377';
-        select.style.color = 'white';
+        selectElement.style.backgroundColor = '#00b377';
+        selectElement.style.color = 'white';
         setTimeout(() => {
-            select.style.backgroundColor = '';
-            select.style.color = '';
+            selectElement.style.backgroundColor = '';
+            selectElement.style.color = '';
         }, 1000);
-        
+
     } catch (error) {
         console.error('Ошибка обновления статуса:', error);
         showNotification('Ошибка обновления статуса', 'error');
-        event.target.value = event.target.getAttribute('data-previous-value');
+        selectElement.value = selectElement.getAttribute('data-previous-value');
     }
 }
 
@@ -3875,3 +3874,36 @@ const themeAnimationCSS = `
 
 // Добавляем CSS в документ
 document.head.insertAdjacentHTML('beforeend', themeAnimationCSS);
+
+// Missing functions that are called from HTML
+function selectAmount(amount) {
+    selectedAmount = amount;
+    document.querySelectorAll('.amount-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.transform = 'scale(1)';
+    });
+    const activeBtn = document.querySelector(`.amount-btn[data-amount="${amount}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.transform = 'scale(1.05)';
+    }
+    document.getElementById('custom-amount').value = '';
+}
+
+function toggleCart() {
+    const cartSummary = document.getElementById('cart-summary');
+    if (cartSummary) {
+        cartSummary.classList.toggle('active');
+    }
+}
+
+function selectCategory(category) {
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const activeBtn = document.querySelector(`.category-btn[data-category="${category}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    filterProducts();
+}
