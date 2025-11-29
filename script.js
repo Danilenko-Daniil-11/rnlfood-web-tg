@@ -285,40 +285,48 @@ function goTo(screenId) {
     const currentScreen = document.querySelector('.screen.active');
     if (currentScreen) {
         currentScreen.style.opacity = '0';
-        currentScreen.style.transform = 'translateY(20px)';
-        currentScreen.style.transition = 'all 0.3s ease';
+        currentScreen.style.transform = 'translateY(-20px)';
+        currentScreen.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
     }
-    
+
     setTimeout(() => {
+        // Скрываем все экраны
         document.querySelectorAll(".screen").forEach(s => {
             s.classList.remove("active");
             s.style.opacity = '0';
             s.style.transform = 'translateY(20px)';
+            s.style.transition = 'none';
         });
-        
+
+        // Показываем целевой экран
         const targetScreen = document.getElementById(screenId);
         targetScreen.classList.add("active");
-        
-        setTimeout(() => {
-            targetScreen.style.opacity = '1';
-            targetScreen.style.transform = 'translateY(0)';
-            
-            // Анимация появления контента
-            const content = targetScreen.querySelector('.hero, .form-container, .page-header, .profile-header, .success-container');
-            if (content) {
+
+        // Принудительно обновляем layout
+        targetScreen.offsetHeight;
+
+        // Анимируем появление
+        targetScreen.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        targetScreen.style.opacity = '1';
+        targetScreen.style.transform = 'translateY(0)';
+
+        // Анимация появления контента
+        const content = targetScreen.querySelector('.hero, .form-container, .page-header, .profile-header, .success-container');
+        if (content) {
+            setTimeout(() => {
                 slideIn(content, 'up');
-            }
-        }, 50);
-        
+            }, 200);
+        }
+
         if (screenId === "start") {
             document.getElementById("authors").style.display = "block";
         } else {
             document.getElementById("authors").style.display = "none";
         }
-        
+
         // Обновление нижней навигации
         updateBottomNavigation(screenId);
-        
+
         switch(screenId) {
             case 'profile':
                 updateProfile();
@@ -351,7 +359,7 @@ function goTo(screenId) {
                 loadFullOrderHistory();
                 break;
         }
-    }, 300);
+    }, 400);
 }
 
 function updateBottomNavigation(screenId) {
@@ -442,7 +450,7 @@ function createSnowflakes(container) {
         setTimeout(() => {
             const snowflake = document.createElement('div');
             snowflake.className = 'snowflake';
-            snowflake.innerHTML = '❄';
+            snowflake.innerHTML = '*';
             snowflake.style.left = Math.random() * 100 + 'vw';
             snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
             snowflake.style.animationDelay = Math.random() * 5 + 's';
@@ -457,7 +465,7 @@ function createSnowflakes(container) {
 }
 
 function createLeaves(container) {
-    const leaves = ['🍁', '🍂', '🥮'];
+    const leaves = ['*', '*', '*'];
     for (let i = 0; i < 30; i++) {
         setTimeout(() => {
             const leaf = document.createElement('div');
@@ -560,7 +568,7 @@ function initKonamiCode() {
 function activateEasterEgg() {
     is8BitMode = !is8BitMode;
     document.body.classList.toggle('pixel-theme', is8BitMode);
-    showNotification(is8BitMode ? '8-bit режим активирован! 🎮' : '8-bit режим выключен', 'success');
+    showNotification(is8BitMode ? '8-bit режим активирован!' : '8-bit режим выключен', 'success');
 }
 
 // Прогресс бар чтения
@@ -915,35 +923,33 @@ function updateProfile() {
         goTo('login');
         return;
     }
-    
+
     const hour = new Date().getHours();
     let greeting = 'ДОБРЫЙ ВЕЧЕР';
     if (hour < 12) greeting = 'ДОБРОЕ УТРО';
     else if (hour < 18) greeting = 'ДОБРЫЙ ДЕНЬ';
-    
+
     document.getElementById('welcome').textContent = `${greeting}, ${currentUser.username.toUpperCase()}`;
-    
+
     // Анимация изменения баланса
     const balanceElement = document.getElementById('balance');
     const currentBalance = parseFloat(balanceElement.textContent) || 0;
     const newBalance = (currentUser.balance || 0).toFixed(2);
-    
+
     if (currentBalance !== parseFloat(newBalance)) {
         animateValue(balanceElement, currentBalance, parseFloat(newBalance), 1000);
     } else {
         balanceElement.textContent = `${newBalance} ₴`;
     }
-    
-    // Цвет баланса должен меняться в зависимости от темы
-    balanceElement.style.color = '';
+
+    // Цвет баланса должен меняться в зависимости от темы - всегда использовать текущий primary цвет
+    balanceElement.style.color = 'var(--primary-color)';
     if (currentUser.balance === 0) {
-        balanceElement.style.color = 'var(--primary-color)';
         balanceElement.classList.add('pulse');
     } else {
-        balanceElement.style.color = 'inherit';
         balanceElement.classList.remove('pulse');
     }
-    
+
     // Заполняем все поля личных данных
     document.getElementById('profile-name').textContent = currentUser.full_name || '-';
     document.getElementById('profile-age').textContent = currentUser.age || calculateAgeFromClass(currentUser.class_name) || '-';
@@ -954,12 +960,28 @@ function updateProfile() {
 // Вспомогательная функция для расчета возраста по классу
 function calculateAgeFromClass(className) {
     if (!className) return null;
-    
-    // Примерная логика: 5 класс = 10-11 лет, 6 класс = 11-12 и т.д.
+
+    // Обрабатываем разные форматы классов
+    const classLower = className.toLowerCase();
+
+    // Старшие классы (8-11)
+    if (classLower.includes('8') || classLower.includes('восьмой')) return '13-14 лет';
+    if (classLower.includes('9') || classLower.includes('девятый')) return '14-15 лет';
+    if (classLower.includes('10') || classLower.includes('десятый')) return '15-16 лет';
+    if (classLower.includes('11') || classLower.includes('одиннадцатый')) return '16-17 лет';
+
+    // Специальности
+    if (classLower.includes('икт') || classLower.includes('информационные технологии')) return '15-17 лет';
+    if (classLower.includes('фт') || classLower.includes('физика-техника')) return '15-17 лет';
+    if (classLower.includes('хб') || classLower.includes('химия-биология')) return '15-17 лет';
+    if (classLower.includes('линг') || classLower.includes('лингвистика')) return '15-17 лет';
+
+    // Младшие классы (5-7)
     const classNumber = parseInt(className.split('-')[0]);
-    if (classNumber >= 5 && classNumber <= 11) {
+    if (classNumber >= 5 && classNumber <= 7) {
         return (classNumber + 5) + ' лет';
     }
+
     return null;
 }
 
@@ -1054,14 +1076,17 @@ document.getElementById('avatar-input').addEventListener('change', function(e) {
 // Загрузка аватара при инициализации
 function loadAvatar() {
     if (!currentUser) return;
-    
-    // Пробуем сначала получить аватар для текущего пользователя
+
+    // Получаем аватар только для текущего пользователя
     const userAvatar = localStorage.getItem(`avatar_${currentUser.username}`);
-    const savedAvatar = userAvatar || localStorage.getItem('avatar');
-    
-    if (savedAvatar) {
+
+    if (userAvatar) {
         const avatarPreview = document.getElementById('avatar-preview');
-        avatarPreview.innerHTML = `<img src="${savedAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        avatarPreview.innerHTML = `<img src="${userAvatar}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+    } else {
+        // Если аватара нет, показываем стандартный
+        const avatarPreview = document.getElementById('avatar-preview');
+        avatarPreview.innerHTML = '<i class="fas fa-user-circle" style="font-size: 60px; color: var(--text-secondary);"></i>';
     }
 }
 
@@ -1071,11 +1096,11 @@ function loadAchievements() {
     if (!container) return;
     
     const achievementList = [
-        { id: 'first_order', name: 'Первый заказ', icon: '🥇', description: 'Сделайте первый заказ' },
-        { id: 'foodie', name: 'Гурман', icon: '🍕', description: 'Попробуйте 10 разных блюд' },
-        { id: 'regular', name: 'Постоянный клиент', icon: '⭐', description: 'Сделайте 20 заказов' },
-        { id: 'healthy', name: 'Здоровое питание', icon: '🥗', description: 'Закажите 5 салатов' },
-        { id: 'sweet_tooth', name: 'Сладкоежка', icon: '🍰', description: 'Попробуйте все десерты' }
+        { id: 'first_order', name: 'Первый заказ', icon: 'medal', description: 'Сделайте первый заказ' },
+        { id: 'foodie', name: 'Гурман', icon: 'pizza', description: 'Попробуйте 10 разных блюд' },
+        { id: 'regular', name: 'Постоянный клиент', icon: 'star', description: 'Сделайте 20 заказов' },
+        { id: 'healthy', name: 'Здоровое питание', icon: 'salad', description: 'Закажите 5 салатов' },
+        { id: 'sweet_tooth', name: 'Сладкоежка', icon: 'cake', description: 'Попробуйте все десерты' }
     ];
     
     container.innerHTML = '';
@@ -1113,11 +1138,11 @@ function unlockAchievement(achievementId) {
 
 function getAchievementById(id) {
     const achievements = {
-        'first_order': { name: 'Первый заказ', icon: '🥇', description: 'Вы сделали свой первый заказ!' },
-        'foodie': { name: 'Гурман', icon: '🍕', description: 'Вы попробовали 10 разных блюд!' },
-        'regular': { name: 'Постоянный клиент', icon: '⭐', description: '20 заказов - вы настоящий постоянный клиент!' },
-        'healthy': { name: 'Здоровое питание', icon: '🥗', description: '5 салатов - вы заботитесь о здоровье!' },
-        'sweet_tooth': { name: 'Сладкоежка', icon: '🍰', description: 'Вы попробовали все наши десерты!' }
+        'first_order': { name: 'Первый заказ', icon: 'medal', description: 'Вы сделали свой первый заказ!' },
+        'foodie': { name: 'Гурман', icon: 'pizza', description: 'Вы попробовали 10 разных блюд!' },
+        'regular': { name: 'Постоянный клиент', icon: 'star', description: '20 заказов - вы настоящий постоянный клиент!' },
+        'healthy': { name: 'Здоровое питание', icon: 'salad', description: '5 салатов - вы заботитесь о здоровье!' },
+        'sweet_tooth': { name: 'Сладкоежка', icon: 'cake', description: 'Вы попробовали все наши десерты!' }
     };
     
     return achievements[id];
@@ -1143,13 +1168,18 @@ function showAchievementNotification(achievement) {
 function loadCaloriesChart() {
     const ctx = document.getElementById('caloriesChart');
     if (!ctx) return;
-    
+
     const ctx2d = ctx.getContext('2d');
     if (!ctx2d) return;
-    
+
+    // Очищаем предыдущий график если он существует
+    if (window.caloriesChart) {
+        window.caloriesChart.destroy();
+    }
+
     // Проверяем есть ли данные о заказах
     const hasOrderData = currentUser && currentUser.orders && currentUser.orders.length > 0;
-    
+
     const data = {
         labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
         datasets: [{
@@ -1158,12 +1188,13 @@ function loadCaloriesChart() {
             backgroundColor: 'rgba(0, 179, 119, 0.2)',
             borderColor: 'rgba(0, 179, 119, 1)',
             borderWidth: 2,
-            fill: true
+            fill: true,
+            tension: 0.4
         }]
     };
-    
+
     try {
-        new Chart(ctx2d, {
+        window.caloriesChart = new Chart(ctx2d, {
             type: 'line',
             data: data,
             options: {
@@ -1172,7 +1203,15 @@ function loadCaloriesChart() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: hasOrderData ? undefined : 1000
+                        max: hasOrderData ? undefined : 1000,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
                     }
                 },
                 plugins: {
@@ -1181,13 +1220,25 @@ function loadCaloriesChart() {
                     },
                     title: {
                         display: !hasOrderData,
-                        text: 'Нет данных о заказах'
+                        text: 'Нет данных о заказах',
+                        font: {
+                            size: 14
+                        }
                     }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
     } catch (error) {
         console.error('Ошибка создания графика:', error);
+        // Показываем сообщение об ошибке
+        ctx2d.font = '16px Arial';
+        ctx2d.fillStyle = '#666';
+        ctx2d.textAlign = 'center';
+        ctx2d.fillText('Ошибка загрузки графика', ctx.width / 2, ctx.height / 2);
     }
 }
 
@@ -1238,7 +1289,7 @@ function toggleFavorite(productId) {
     updateFavoriteButton(productId);
     
     if (favorites.has(productId)) {
-        showNotification('Добавлено в избранное ❤️', 'success');
+        showNotification('Добавлено в избранное', 'success');
     }
 }
 
@@ -1418,27 +1469,27 @@ function filterProducts() {
     const isVegetarian = document.getElementById('filter-vegetarian')?.checked || false;
     const isGlutenFree = document.getElementById('filter-gluten-free')?.checked || false;
     const maxPrice = parseInt(document.getElementById('price-slider')?.value || 150);
-    
+
     const container = document.getElementById('items-container');
     if (!container) return;
-    
+
     const allItems = container.querySelectorAll('.item-card');
-    
+
     let visibleItems = 0;
-    
+
     allItems.forEach((item, index) => {
         const itemName = item.querySelector('.item-name')?.textContent.toLowerCase() || '';
         const itemCategory = item.getAttribute('data-category') || '';
         const itemVegetarian = item.getAttribute('data-vegetarian') === 'true';
         const itemGlutenFree = item.getAttribute('data-gluten-free') === 'true';
         const itemPrice = parseFloat(item.getAttribute('data-price')) || 0;
-        
+
         const matchesSearch = itemName.includes(searchTerm);
         const matchesCategory = activeCategory === 'all' || itemCategory === activeCategory;
         const matchesVegetarian = !isVegetarian || itemVegetarian;
         const matchesGlutenFree = !isGlutenFree || itemGlutenFree;
         const matchesPrice = itemPrice <= maxPrice;
-        
+
         if (matchesSearch && matchesCategory && matchesVegetarian && matchesGlutenFree && matchesPrice) {
             item.style.display = 'block';
             visibleItems++;
@@ -1449,7 +1500,7 @@ function filterProducts() {
             item.style.display = 'none';
         }
     });
-    
+
     // Показываем сообщение если ничего не найдено
     const noResults = document.getElementById('no-results-message');
     if (!noResults && visibleItems === 0 && container.children.length > 0) {
@@ -1465,7 +1516,7 @@ function filterProducts() {
     } else if (noResults && visibleItems > 0) {
         noResults.remove();
     }
-    
+
     highlightSearchText(searchTerm);
 }
 
@@ -2096,85 +2147,85 @@ function startConfetti() {
 function createConfettiAnimation() {
     const confetti = document.createElement('div');
     confetti.className = 'confetti-animation';
-    confetti.innerHTML = '🎉';
+    confetti.innerHTML = 'confetti';
     confetti.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 1s ease-out forwards;
+        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     `;
     document.body.appendChild(confetti);
-    
+
     setTimeout(() => {
         confetti.remove();
-    }, 1000);
+    }, 800);
 }
 
 function createSuccessAnimation() {
     const success = document.createElement('div');
     success.className = 'confetti-animation';
-    success.innerHTML = '✅';
+    success.innerHTML = 'success';
     success.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 1s ease-out forwards;
+        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     `;
     document.body.appendChild(success);
-    
+
     setTimeout(() => {
         success.remove();
-    }, 1000);
+    }, 800);
 }
 
 function createLoginAnimation() {
     const login = document.createElement('div');
     login.className = 'confetti-animation';
-    login.innerHTML = '👋';
+    login.innerHTML = 'hello';
     login.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 1s ease-out forwards;
+        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     `;
     document.body.appendChild(login);
-    
+
     setTimeout(() => {
         login.remove();
-    }, 1000);
+    }, 800);
 }
 
 function createPromoAnimation() {
     const promo = document.createElement('div');
     promo.className = 'confetti-animation';
-    promo.innerHTML = '🎁';
+    promo.innerHTML = 'gift';
     promo.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0);
         font-size: 4em;
         z-index: 10000;
         pointer-events: none;
-        animation: confettiPop 1s ease-out forwards;
+        animation: confettiPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     `;
     document.body.appendChild(promo);
-    
+
     setTimeout(() => {
         promo.remove();
-    }, 1000);
+    }, 800);
 }
 
 // Прогресс-бар готовности заказа
@@ -2456,18 +2507,20 @@ updateDishTimer();
 // Улучшенная история заказов
 async function loadOrderHistory() {
     if (!currentUser) return;
-    
+
     try {
         const data = await apiRequest('/api/orders/history?limit=5');
-        
+
         const historyContainer = document.getElementById('order-history-list');
+        if (!historyContainer) return;
+
         historyContainer.innerHTML = '';
-        
+
         if (!data.orders || data.orders.length === 0) {
             historyContainer.innerHTML = '<div class="no-orders">Заказов пока нет</div>';
             return;
         }
-        
+
         data.orders.forEach((order, index) => {
             setTimeout(() => {
                 const orderElement = createOrderElement(order);
@@ -2475,7 +2528,7 @@ async function loadOrderHistory() {
                 slideIn(orderElement, 'up');
             }, index * 100);
         });
-        
+
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
         showNotification('Ошибка загрузки истории заказов', 'error');

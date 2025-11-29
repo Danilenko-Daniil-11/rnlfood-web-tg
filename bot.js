@@ -324,8 +324,8 @@ async function completeRegistration(ctx) {
             ctx.session.state = BOT_STATES.MAIN_MENU;
             
             await ctx.reply(
-                `✅ *Регистрация успешна!*\n\n` +
-                `👤 *Логин:* ${tempData.username}\n` +
+                `registration successful*\n\n` +
+                `login: ${tempData.username}\n` +
                 `👤 *Имя:* ${tempData.full_name}\n` +
                 `🏫 *Класс:* ${tempData.class_name}\n` +
                 `🎂 *Возраст:* ${tempData.age}\n` +
@@ -422,9 +422,9 @@ async function completeLogin(ctx) {
         else if (hour < 18) greeting = 'ДОБРЫЙ ДЕНЬ';
         
         await ctx.reply(
-            `✅ *Вход выполнен успешно!*\n\n` +
-            `${greeting}, *${user.username.toUpperCase()}*! 👋\n\n` +
-            `💰 *Текущий баланс:* ${parseFloat(user.balance).toFixed(2)} ₴`,
+            `login successful*\n\n` +
+            `${greeting}, *${user.username.toUpperCase()}*! hello\n\n` +
+            `current balance: ${parseFloat(user.balance).toFixed(2)} ₴`,
             { parse_mode: 'Markdown' }
         );
         
@@ -443,7 +443,7 @@ async function showMainMenu(ctx) {
     const keyboard = Markup.keyboard([
         ['👤 Профиль', '🍽️ Ассортимент'],
         ['🛒 Корзина', '📊 История заказов'],
-        ['💳 Пополнить баланс', '🎁 Промокоды'],
+        ['Top up balance', 'Promo Codes'],
         ['🚪 Выйти']
     ]).resize();
     
@@ -476,7 +476,7 @@ async function handleMainMenuInput(ctx, message) {
         case '💳 Пополнить баланс':
             await showPaymentMethods(ctx);
             break;
-        case '🎁 Промокоды':
+        case 'Promo Codes':
             await showPromoCodes(ctx);
             break;
         case '⚙️ Админ панель':
@@ -843,8 +843,8 @@ async function logout(ctx) {
     ctx.session.tempData = {};
     
     await ctx.reply(
-        '✅ Вы успешно вышли из системы.\n\n' +
-        'Для входа используйте команду /start',
+        'You have successfully logged out.\n\n' +
+        'Use /start command to log in again',
         Markup.removeKeyboard()
     );
     
@@ -913,7 +913,7 @@ async function addToCart(ctx, mealId) {
         }
         ctx.session.cart[mealId]++;
         
-        await ctx.answerCbQuery(`✅ ${meal.name} добавлен в корзину!`);
+        await ctx.answerCbQuery(`Added ${meal.name} to cart!`);
         
         // Показываем обновленную корзину
         await showCart(ctx);
@@ -927,8 +927,8 @@ async function addToCart(ctx, mealId) {
 // Очистка корзины
 async function clearCart(ctx) {
     ctx.session.cart = {};
-    await ctx.answerCbQuery('✅ Корзина очищена');
-    await ctx.reply('🛒 Корзина успешно очищена!');
+    await ctx.answerCbQuery('Cart cleared');
+    await ctx.reply('Cart cleared successfully!');
 }
 
 // Оформление заказа
@@ -1021,7 +1021,7 @@ async function placeOrder(ctx) {
                 { parse_mode: 'Markdown' }
             );
             
-            await ctx.answerCbQuery('✅ Заказ успешно оформлен!');
+            await ctx.answerCbQuery('Order placed successfully!');
             
         } catch (error) {
             await client.query('ROLLBACK');
