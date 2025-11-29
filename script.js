@@ -1396,6 +1396,140 @@ function initializeAssortment() {
             filterProducts();
         });
     });
+
+    // Инициализация быстрой корзины
+    initQuickCart();
+
+    // Запуск системы уведомлений о заказах
+    initOrderNotifications();
+}
+
+// Система уведомлений о готовности заказов
+function initOrderNotifications() {
+    if (!currentUser) return;
+
+    // Проверяем статусы заказов каждые 30 секунд
+    setInterval(checkOrderStatus, 30000);
+
+    // Проверяем при загрузке страницы
+    setTimeout(checkOrderStatus, 5000);
+}
+
+async function checkOrderStatus() {
+    if (!currentUser) return;
+
+    try {
+        const data = await apiRequest('/api/orders/history?limit=10');
+
+        if (data.orders && data.orders.length > 0) {
+            const recentOrders = data.orders.filter(order =>
+                order.status !== 'completed' && order.status !== 'cancelled'
+            );
+
+            recentOrders.forEach(order => {
+                const savedStatus = localStorage.getItem(`order_${order.id}_status`);
+
+                if (savedStatus && savedStatus !== order.status) {
+                    // Статус изменился!
+                    showOrderStatusNotification(order);
+                }
+
+                // Сохраняем текущий статус
+                localStorage.setItem(`order_${order.id}_status`, order.status);
+            });
+        }
+    } catch (error) {
+        console.error('Ошибка проверки статуса заказов:', error);
+    }
+}
+
+function showOrderStatusNotification(order) {
+    const statusMessages = {
+        'confirmed': 'Ваш заказ подтвержден и готовится!',
+        'preparing': 'Ваш заказ начали готовить',
+        'ready': 'Ваш заказ готов! Можете забрать его',
+        'completed': 'Заказ выполнен успешно',
+        'cancelled': 'Заказ был отменен'
+    };
+
+    const message = statusMessages[order.status] || `Статус заказа изменен: ${order.status}`;
+
+    showNotification(message, order.status === 'ready' ? 'success' : 'info');
+
+    // Для готового заказа добавляем звук и вибрацию
+    if (order.status === 'ready') {
+        playNotificationSound();
+        if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+        }
+    }
+}
+
+function playNotificationSound() {
+    // Создаем аудио элемент для звукового уведомления
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQdBzeP1fLOfCsFJH
+
+// Быстрая корзина с часто заказываемыми блюдами
+function initQuickCart() {
+    // Получаем часто заказываемые блюда из localStorage
+    const frequentItems = JSON.parse(localStorage.getItem('frequentItems') || '[]');
+
+    if (frequentItems.length > 0) {
+        const quickCartContainer = document.createElement('div');
+        quickCartContainer.id = 'quick-cart';
+        quickCartContainer.className = 'quick-cart';
+        quickCartContainer.innerHTML = `
+            <div class="quick-cart-header">
+                <h4><i class="fas fa-clock"></i> Часто заказываете</h4>
+                <button class="btn-close" onclick="hideQuickCart()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="quick-cart-items">
+                ${frequentItems.slice(0, 4).map(item => {
+                    const product = products.find(p => p.id === item.id);
+                    if (product) {
+                        return `
+                            <div class="quick-cart-item" onclick="addToCart('${product.id}')">
+                                <div class="quick-cart-image">
+                                    <i class="${product.icon}"></i>
+                                </div>
+                                <div class="quick-cart-info">
+                                    <div class="quick-cart-name">${product.name}</div>
+                                    <div class="quick-cart-price">${product.price} ₴</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return '';
+                }).join('')}
+            </div>
+        `;
+
+        document.body.appendChild(quickCartContainer);
+
+        // Показываем быструю корзину через 2 секунды
+        setTimeout(() => {
+            if (!localStorage.getItem('quickCartHidden')) {
+                showQuickCart();
+            }
+        }, 2000);
+    }
+}
+
+function showQuickCart() {
+    const quickCart = document.getElementById('quick-cart');
+    if (quickCart) {
+        quickCart.classList.add('active');
+    }
+}
+
+function hideQuickCart() {
+    const quickCart = document.getElementById('quick-cart');
+    if (quickCart) {
+        quickCart.classList.remove('active');
+        localStorage.setItem('quickCartHidden', 'true');
+    }
 }
 
 function getAllergenName(allergen) {
@@ -3186,58 +3320,72 @@ function showThemePalette() {
 function applyColorTheme(themeKey) {
     const theme = COLOR_THEMES[themeKey];
     if (!theme) return;
-    
+
+    // Проверяем, не в темной ли теме мы находимся
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    if (isDarkTheme) {
+        showNotification('Цветовые темы недоступны в тёмном режиме', 'warning');
+        return;
+    }
+
     currentColorScheme = themeKey;
-    
+
     // Обновляем CSS переменные
     document.documentElement.style.setProperty('--primary-color', theme.primary);
     document.documentElement.style.setProperty('--primary-dark', theme.primaryDark);
     document.documentElement.style.setProperty('--secondary-color', theme.secondary);
     document.documentElement.style.setProperty('--accent-color', theme.accent);
-    
+
     // Обновляем активную тему в палитре
     document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.remove('active');
     });
     document.querySelector(`.theme-option[data-theme="${themeKey}"]`).classList.add('active');
-    
+
     // Сохраняем в localStorage
     localStorage.setItem('colorTheme', themeKey);
     localStorage.setItem('customTheme', 'false');
-    
+
     showNotification(`Тема "${theme.name}" применена!`, 'success');
-    
+
     // Анимация смены темы
     animateThemeChange();
 }
 
 // Функция применения пользовательской темы
 function applyCustomTheme() {
+    // Проверяем, не в темной ли теме мы находимся
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    if (isDarkTheme) {
+        showNotification('Цветовые темы недоступны в тёмном режиме', 'warning');
+        return;
+    }
+
     const primary = document.getElementById('custom-primary').value;
     const secondary = document.getElementById('custom-secondary').value;
     const accent = document.getElementById('custom-accent').value;
-    
+
     // Рассчитываем тёмные версии цветов
     const primaryDark = shadeColor(primary, -20);
-    
+
     // Применяем цвета
     document.documentElement.style.setProperty('--primary-color', primary);
     document.documentElement.style.setProperty('--primary-dark', primaryDark);
     document.documentElement.style.setProperty('--secondary-color', secondary);
     document.documentElement.style.setProperty('--accent-color', accent);
-    
+
     // Сохраняем кастомные цвета
     localStorage.setItem('customPrimary', primary);
     localStorage.setItem('customSecondary', secondary);
     localStorage.setItem('customAccent', accent);
     localStorage.setItem('customTheme', 'true');
     localStorage.setItem('colorTheme', 'custom');
-    
+
     currentColorScheme = 'custom';
-    
+
     showNotification('Пользовательская тема применена!', 'success');
     animateThemeChange();
-    
+
     // Закрываем модальное окно через секунду
     setTimeout(() => {
         closeModal('theme-palette-modal');
@@ -3288,21 +3436,28 @@ function loadCustomColors() {
 
 // Загрузка сохранённой темы при запуске
 function loadColorTheme() {
+    // Проверяем, не в темной ли теме мы находимся
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    if (isDarkTheme) {
+        // В темной теме не применяем цветовые темы
+        return;
+    }
+
     const savedTheme = localStorage.getItem('colorTheme');
     const isCustomTheme = localStorage.getItem('customTheme') === 'true';
-    
+
     if (isCustomTheme) {
         // Загружаем кастомную тему
         const primary = localStorage.getItem('customPrimary') || '#00b377';
         const secondary = localStorage.getItem('customSecondary') || '#667eea';
         const accent = localStorage.getItem('customAccent') || '#764ba2';
         const primaryDark = shadeColor(primary, -20);
-        
+
         document.documentElement.style.setProperty('--primary-color', primary);
         document.documentElement.style.setProperty('--primary-dark', primaryDark);
         document.documentElement.style.setProperty('--secondary-color', secondary);
         document.documentElement.style.setProperty('--accent-color', accent);
-        
+
         currentColorScheme = 'custom';
     } else if (savedTheme && COLOR_THEMES[savedTheme]) {
         // Загружаем предустановленную тему
