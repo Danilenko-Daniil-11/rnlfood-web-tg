@@ -70,9 +70,27 @@
         body {
             font-family: 'Roboto', sans-serif;
             background: var(--background);
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            background-attachment: fixed;
             color: var(--text-dark);
             line-height: 1.6;
             min-height: 100vh;
+            animation: liquidFlow 20s ease-in-out infinite;
+        }
+
+        @keyframes liquidFlow {
+            0%, 100% {
+                background-position: 0% 0%, 100% 0%, 50% 50%;
+            }
+            33% {
+                background-position: 100% 100%, 0% 100%, 50% 0%;
+            }
+            66% {
+                background-position: 50% 0%, 50% 100%, 100% 50%;
+            }
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -144,13 +162,20 @@
 
         /* Header */
         .header {
-            background: var(--card-bg);
-            box-shadow: var(--shadow);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        .header:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .header-content {
@@ -600,8 +625,9 @@
 
         .btn-primary:hover {
             background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,179,119,0.3);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0,179,119,0.4);
+            filter: brightness(1.1);
         }
 
         .btn-primary::before {
@@ -642,11 +668,19 @@
         .form-container {
             max-width: 400px;
             margin: 0 auto;
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 40px;
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .form-container:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .form-container h2 {
@@ -792,14 +826,63 @@
 
         /* Исправление для кнопки регистрации */
         .login-btn-container {
-            display: flex;
-            justify-content: center;
+            width: 100% !important;
+            margin-top: 25px;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        .login-btn-container .btn-primary {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             width: 100%;
+            max-width: 300px;
+            text-align: center;
+            margin: 0 !important;
         }
 
         .register-btn {
             width: 100%;
             justify-content: center;
+        }
+
+        /* Исправление для режима первоклассника */
+        body.simple-mode .register-btn {
+            width: auto !important;
+            max-width: 300px;
+            margin: 0 auto !important;
+            font-size: 1.2em !important;
+            padding: 20px 25px !important;
+        }
+
+        /* Адаптивный размер текста для кнопок */
+        .btn-primary {
+            font-size: clamp(0.9em, 2.5vw, 1.1em);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .register-btn {
+            font-size: clamp(0.8em, 2vw, 1em);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Для очень маленьких экранов */
+        @media (max-width: 480px) {
+            .btn-primary {
+                font-size: 0.9em;
+                padding: 12px 20px;
+            }
+
+            .register-btn {
+                font-size: 0.8em;
+                padding: 15px 20px;
+            }
         }
 
         /* Избранное */
@@ -1385,21 +1468,25 @@
         }
 
         .item-card {
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border-radius: var(--radius);
             padding: 25px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             text-align: center;
             transition: all 0.3s ease;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
         }
 
         .item-card:hover {
+            background: rgba(255, 255, 255, 0.15);
             transform: translateY(-10px) rotateX(5deg);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .item-image {
@@ -2105,15 +2192,17 @@
         }
 
         .modal-content {
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: var(--radius);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
             animation: scaleIn 0.3s ease-out;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         @keyframes scaleIn {
@@ -3056,6 +3145,153 @@
             background-size: cover;
             opacity: 0.1;
             pointer-events: none;
+        }
+
+        /* Плавающие геометрические фигуры */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: floatShape 20s infinite linear;
+        }
+
+        .shape.circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .shape.square {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, var(--accent-color), var(--primary-color));
+            transform: rotate(45deg);
+        }
+
+        .shape.triangle {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 45px solid var(--secondary-color);
+        }
+
+        .shape.diamond {
+            width: 30px;
+            height: 30px;
+            background: var(--accent-color);
+            transform: rotate(45deg);
+            border-radius: 4px;
+        }
+
+        @keyframes floatShape {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.1;
+            }
+            90% {
+                opacity: 0.1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Анимированные градиенты для карточек */
+        .item-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color), var(--primary-color));
+            background-size: 400% 100%;
+            animation: gradientShift 3s ease-in-out infinite;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Эффект свечения при наведении */
+        .item-card:hover {
+            box-shadow:
+                0 15px 40px rgba(0,0,0,0.2),
+                0 0 30px rgba(0,179,119,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        /* Пульсирующие точки на кнопках */
+        .btn-particle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            transform: translate(-50%, -50%);
+            animation: buttonPulse 2s infinite;
+        }
+
+        @keyframes buttonPulse {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 100px;
+                height: 100px;
+                opacity: 0;
+            }
+        }
+
+        /* Магнитный эффект для курсора */
+        .item-card, .btn-primary, .btn-secondary {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Динамические тени */
+        .profile-card, .item-card, .cart-summary {
+            position: relative;
+        }
+
+        .profile-card::after, .item-card::after, .cart-summary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        .profile-card:hover::after, .item-card:hover::after, .cart-summary:hover::after {
+            opacity: 1;
         }
 
         /* Кнопка палитры тем */

@@ -1024,35 +1024,40 @@ async function saveProfile() {
 }
 
 // Загрузка аватара
-document.getElementById('avatar-input').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        // Проверка размера файла
-        if (file.size > 2 * 1024 * 1024) { // 2MB
-            showNotification('Файл слишком большой. Максимальный размер: 2MB', 'error');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const avatarPreview = document.getElementById('avatar-preview');
-            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-            
-            // Сохраняем в localStorage для текущего пользователя
-            if (currentUser) {
-                currentUser.avatar = e.target.result;
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+const avatarInput = document.getElementById('avatar-input');
+if (avatarInput) {
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Проверка размера файла
+            if (file.size > 2 * 1024 * 1024) { // 2MB
+                showNotification('Файл слишком большой. Максимальный размер: 2MB', 'error');
+                return;
             }
-            localStorage.setItem(`avatar_${currentUser?.username}`, e.target.result);
-            
-            showNotification('Аватар успешно обновлен', 'success');
-        };
-        reader.onerror = function() {
-            showNotification('Ошибка загрузки изображения', 'error');
-        };
-        reader.readAsDataURL(file);
-    }
-});
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatarPreview = document.getElementById('avatar-preview');
+                if (avatarPreview) {
+                    avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Аватар" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                }
+
+                // Сохраняем в localStorage для текущего пользователя
+                if (currentUser) {
+                    currentUser.avatar = e.target.result;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+                localStorage.setItem(`avatar_${currentUser?.username}`, e.target.result);
+
+                showNotification('Аватар успешно обновлен', 'success');
+            };
+            reader.onerror = function() {
+                showNotification('Ошибка загрузки изображения', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
 // Загрузка аватара при инициализации
 function loadAvatar() {
@@ -3122,27 +3127,30 @@ function showThemePalette() {
 function applyColorTheme(themeKey) {
     const theme = COLOR_THEMES[themeKey];
     if (!theme) return;
-    
+
     currentColorScheme = themeKey;
-    
+
     // Обновляем CSS переменные
     document.documentElement.style.setProperty('--primary-color', theme.primary);
     document.documentElement.style.setProperty('--primary-dark', theme.primaryDark);
     document.documentElement.style.setProperty('--secondary-color', theme.secondary);
     document.documentElement.style.setProperty('--accent-color', theme.accent);
-    
+
     // Обновляем активную тему в палитре
     document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.remove('active');
     });
-    document.querySelector(`.theme-option[data-theme="${themeKey}"]`).classList.add('active');
-    
+    const activeOption = document.querySelector(`.theme-option[data-theme="${themeKey}"]`);
+    if (activeOption) {
+        activeOption.classList.add('active');
+    }
+
     // Сохраняем в localStorage
     localStorage.setItem('colorTheme', themeKey);
     localStorage.setItem('customTheme', 'false');
-    
+
     showNotification(`Тема "${theme.name}" применена!`, 'success');
-    
+
     // Анимация смены темы
     animateThemeChange();
 }

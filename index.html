@@ -14,10 +14,21 @@
 <body class="light-theme">
     <!-- Конфетти контейнер -->
     <canvas id="confetti-canvas"></canvas>
-    
+
     <!-- Снег/листья контейнер -->
     <div id="seasonal-effects"></div>
-    
+
+    <!-- Плавающие геометрические фигуры -->
+    <div class="floating-shapes" id="floating-shapes">
+        <div class="shape circle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="shape square" style="left: 20%; animation-delay: 2s;"></div>
+        <div class="shape triangle" style="left: 35%; animation-delay: 4s;"></div>
+        <div class="shape diamond" style="left: 50%; animation-delay: 6s;"></div>
+        <div class="shape circle" style="left: 65%; animation-delay: 8s;"></div>
+        <div class="shape square" style="left: 80%; animation-delay: 10s;"></div>
+        <div class="shape triangle" style="left: 90%; animation-delay: 12s;"></div>
+    </div>
+
     <!-- Кастомный курсор -->
     <div id="custom-cursor"></div>
     
@@ -162,8 +173,8 @@
                 </div>
                 
                 <!-- Блюдо дня -->
-                <div class="dish-of-the-day">
-                    <h3>🍽️ Блюдо дня</h3>
+                    <div class="dish-of-the-day">
+                        <h3>Блюдо дня</h3>
                     <div class="daily-dish-card">
                         <div class="dish-image">
                             <i class="fas fa-utensils"></i>
