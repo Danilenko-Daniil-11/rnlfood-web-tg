@@ -430,6 +430,15 @@
             overflow: hidden;
         }
 
+        .dark-theme .hero {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--text-dark);
+        }
+
+        .light-theme .hero {
+            color: var(--white);
+        }
+
         .parallax-bg {
             position: absolute;
             top: 0;
@@ -794,8 +803,15 @@
             color: var(--primary-color);
         }
 
-        /* Исправление для кнопки регистрации */
+        /* Исправление для кнопок входа и регистрации */
         .login-btn-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .form-footer .btn-contain {
             display: flex;
             justify-content: center;
             width: 100%;
@@ -804,6 +820,7 @@
         .register-btn {
             width: 100%;
             justify-content: center;
+            max-width: 300px; /* Ограничение ширины для лучшего вида */
         }
 
         /* Избранное */
@@ -884,6 +901,11 @@
             border-radius: var(--radius);
             color: var(--white);
             min-width: 300px;
+            position: relative;
+        }
+
+        .dark-theme .balance-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         }
 
         .balance-info h3 {
