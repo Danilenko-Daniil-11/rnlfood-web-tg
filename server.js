@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
@@ -48,10 +49,24 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files with caching headers
-app.use(express.static(path.join(__dirname), {
+app.use('/style.css', express.static(path.join(__dirname, 'style.css'), {
     maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
     etag: true,
     lastModified: true
+}));
+
+app.use('/script.js', express.static(path.join(__dirname, 'script.js'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+    etag: true,
+    lastModified: true
+}));
+
+// Serve other static files from root
+app.use(express.static(path.join(__dirname), {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+    etag: true,
+    lastModified: true,
+    index: false // Don't serve index.html automatically
 }));
 
 // API Routes with rate limiting
@@ -73,7 +88,14 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/')) {
         return notFoundHandler(req, res);
     }
-    res.sendFile(path.join(__dirname, 'index.html'));
+
+    // Try to serve the file if it exists, otherwise serve index.html
+    const filePath = path.join(__dirname, req.path);
+    if (req.path.includes('.') && fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.sendFile(path.join(__dirname, 'index.html'));
+    }
 });
 
 // Error handling middleware (must be last)
