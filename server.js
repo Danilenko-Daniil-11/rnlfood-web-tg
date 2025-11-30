@@ -479,18 +479,174 @@ app.post('/api/update-profile', authenticateToken, async (req, res) => {
     try {
         const { full_name, class_name } = req.body;
         const user_id = req.user.userId;
-        
+
         await pool.query(`
-            UPDATE profiles 
+            UPDATE profiles
             SET full_name = $1, class_name = $2, updated_at = NOW()
             WHERE user_id = $3
         `, [full_name, class_name, user_id]);
-        
+
         res.json({ success: true });
-        
+
     } catch (error) {
         console.error('Error updating profile:', error);
         res.status(500).json({ error: 'Ошибка обновления профиля' });
+    }
+});
+
+// API для получения уведомлений пользователя
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+    try {
+        const { limit = 20, offset = 0 } = req.query;
+        const user_id = req.user.userId;
+
+        const result = await pool.query(`
+            SELECT * FROM user_notifications
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [user_id, limit, offset]);
+
+        // Получаем общее количество для пагинации
+        const countResult = await pool.query(`
+            SELECT COUNT(*) FROM user_notifications WHERE user_id = $1
+        `, [user_id]);
+
+        res.json({
+            notifications: result.rows,
+            total: parseInt(countResult.rows[0].count),
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Ошибка загрузки уведомлений' });
+    }
+});
+
+// API для отметки уведомления как прочитанного
+app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.user.userId;
+
+        const result = await pool.query(`
+            UPDATE user_notifications
+            SET is_read = true
+            WHERE id = $1 AND user_id = $2
+            RETURNING *
+        `, [id, user_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Уведомление не найдено' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: 'Ошибка обновления уведомления' });
+    }
+});
+
+// API для отметки всех уведомлений как прочитанных
+app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        await pool.query(`
+            UPDATE user_notifications
+            SET is_read = true
+            WHERE user_id = $1 AND is_read = false
+        `, [user_id]);
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ error: 'Ошибка обновления уведомлений' });
+    }
+});
+
+// API для получения количества непрочитанных уведомлений
+app.get('/api/notifications/unread-count', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        const result = await pool.query(`
+            SELECT COUNT(*) FROM user_notifications
+            WHERE user_id = $1 AND is_read = false
+        `, [user_id]);
+
+        res.json({ count: parseInt(result.rows[0].count) });
+
+    } catch (error) {
+        console.error('Error fetching unread count:', error);
+        res.status(500).json({ error: 'Ошибка получения количества уведомлений' });
+    }
+});
+
+// API для создания уведомления (только для админов)
+app.post('/api/admin/notifications', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { user_id, title, message, type = 'info' } = req.body;
+
+        if (!user_id || !title || !message) {
+            return res.status(400).json({ error: 'Необходимо указать user_id, title и message' });
+        }
+
+        // Проверяем существование пользователя
+        const userCheck = await pool.query('SELECT id FROM users WHERE id = $1', [user_id]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        const result = await pool.query(`
+            INSERT INTO user_notifications (user_id, title, message, type)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [user_id, title, message, type]);
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error creating notification:', error);
+        res.status(500).json({ error: 'Ошибка создания уведомления' });
+    }
+});
+
+// API для создания массового уведомления (для всех пользователей)
+app.post('/api/admin/notifications/broadcast', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { title, message, type = 'info', user_role } = req.body;
+
+        if (!title || !message) {
+            return res.status(400).json({ error: 'Необходимо указать title и message' });
+        }
+
+        let query = `
+            INSERT INTO user_notifications (user_id, title, message, type)
+            SELECT u.id, $1, $2, $3
+            FROM users u
+        `;
+        let params = [title, message, type];
+
+        if (user_role) {
+            query += ` JOIN user_roles ur ON u.id = ur.user_id WHERE ur.role = $4`;
+            params.push(user_role);
+        }
+
+        const result = await pool.query(query, params);
+
+        res.json({
+            success: true,
+            message: `Уведомление отправлено ${result.rowCount} пользователям`
+        });
+
+    } catch (error) {
+        console.error('Error broadcasting notification:', error);
+        res.status(500).json({ error: 'Ошибка отправки массового уведомления' });
     }
 });
 
@@ -621,6 +777,15 @@ app.put('/api/admin/orders/:id/status', authenticateToken, requireAdmin, async (
             WHERE id = $2
             RETURNING *
         `, [status, id]);
+
+        // Создаем уведомление для пользователя о изменении статуса
+        const notificationMessage = getOrderStatusNotificationMessage(status);
+        if (notificationMessage) {
+            await client.query(`
+                INSERT INTO user_notifications (user_id, title, message, type, order_id)
+                VALUES ($1, $2, $3, 'order', $4)
+            `, [order.user_id, 'Статус заказа изменен', notificationMessage, id]);
+        }
 
         await client.query('COMMIT');
         res.json(updateResult.rows[0]);
@@ -1794,6 +1959,18 @@ if (process.env.BOT_TOKEN) {
     // Graceful shutdown
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
+}
+
+// Функция для генерации текста уведомления о статусе заказа
+function getOrderStatusNotificationMessage(status) {
+    const messages = {
+        'confirmed': 'Ваш заказ был подтвержден и принят в обработку.',
+        'preparing': 'Ваш заказ начали готовить. Ожидайте готовности через 15-20 минут.',
+        'ready': 'Ваш заказ готов! Можете забрать его в столовой.',
+        'completed': 'Ваш заказ был успешно завершен. Приятного аппетита!',
+        'cancelled': 'Ваш заказ был отменен. Деньги возвращены на ваш баланс.'
+    };
+    return messages[status] || null;
 }
 
 // Все остальные маршруты ведут на index.html

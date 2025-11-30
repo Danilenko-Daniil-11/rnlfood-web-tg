@@ -104,6 +104,11 @@
                         <span id="cart-count" class="cart-count">0</span>
                     </div>
 
+                    <div class="notifications-icon" id="notifications-icon" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notifications-count" class="notifications-count" style="display: none;">0</span>
+                    </div>
+
                     <div class="avatar" onclick="goTo('profile')">
                         <i class="fas fa-user"></i>
                     </div>
@@ -763,6 +768,47 @@
                         </div>
                     </div>
 
+                    <div class="admin-notifications">
+                        <h3>Отправка уведомлений</h3>
+                        <div class="notification-form">
+                            <div class="input-group">
+                                <input type="text" id="notification-title" placeholder=" " required>
+                                <label for="notification-title">Заголовок уведомления</label>
+                            </div>
+                            <div class="input-group">
+                                <textarea id="notification-message" placeholder=" " required rows="3"></textarea>
+                                <label for="notification-message">Текст уведомления</label>
+                            </div>
+                            <div class="input-group">
+                                <select id="notification-type">
+                                    <option value="info">Информация</option>
+                                    <option value="warning">Предупреждение</option>
+                                    <option value="success">Успех</option>
+                                    <option value="error">Ошибка</option>
+                                    <option value="order">Заказ</option>
+                                </select>
+                                <label for="notification-type">Тип уведомления</label>
+                            </div>
+                            <div class="input-group">
+                                <select id="notification-target">
+                                    <option value="all">Всем пользователям</option>
+                                    <option value="user">Конкретному пользователю</option>
+                                </select>
+                                <label for="notification-target">Получатель</label>
+                            </div>
+                            <div class="input-group" id="user-select-group" style="display: none;">
+                                <input type="text" id="notification-user-id" placeholder="ID пользователя">
+                                <label for="notification-user-id">ID пользователя</label>
+                            </div>
+                            <div class="btn-contain">
+                                <button class="btn-primary btn-particle" onclick="sendAdminNotification()">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Отправить уведомление
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="popular-meals">
                         <h3>Популярные блюда</h3>
                         <div id="admin-popular-meals">
@@ -782,18 +828,18 @@
                 <i class="fas fa-trash"></i>
             </button>
         </div>
-        
+
         <!-- Общий счётчик калорий -->
         <div class="calories-counter">
             <i class="fas fa-fire"></i>
             <span>Калории: </span>
             <span id="total-calories">0</span>
         </div>
-        
+
         <div class="cart-items" id="cart-items">
             <!-- Cart items will be loaded by JavaScript -->
         </div>
-        
+
         <div class="promo-section">
             <div class="promo-input">
                 <input type="text" id="promo-code" placeholder="Промокод">
@@ -803,33 +849,54 @@
             </div>
             <div id="promo-message" class="promo-message"></div>
         </div>
-        
+
         <div class="cart-total">
             <span>Итого:</span>
             <span id="cart-total">0 ₴</span>
         </div>
-        
+
         <div class="cart-discount" id="cart-discount" style="display: none;">
             <span>Скидка:</span>
             <span id="discount-amount">0 ₴</span>
         </div>
-        
+
         <div class="cart-final" id="cart-final">
             <span>К оплате:</span>
             <span id="final-total">0 ₴</span>
         </div>
-        
+
         <div class="btn-contain">
             <button class="btn-primary btn-order btn-particle" onclick="placeOrder()">
                 <span>ОФОРМИТЬ ЗАКАЗ</span>
                 <i class="fas fa-shopping-basket"></i>
             </button>
-            
+
             <!-- Кнопка поделиться заказом -->
             <button class="btn-secondary btn-particle" onclick="shareOrder()">
                 <i class="fas fa-share"></i>
                 Поделиться
             </button>
+        </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div class="notifications-panel" id="notifications-panel">
+        <div class="notifications-header">
+            <h3>Уведомления</h3>
+            <button class="btn-mark-all-read btn-particle" onclick="markAllNotificationsAsRead()">
+                <i class="fas fa-check-double"></i>
+                Отметить все прочитанными
+            </button>
+        </div>
+
+        <div class="notifications-list" id="notifications-list">
+            <!-- Notifications will be loaded by JavaScript -->
+        </div>
+
+        <div class="notifications-empty" id="notifications-empty">
+            <i class="fas fa-bell-slash"></i>
+            <h4>Уведомлений пока нет</h4>
+            <p>Здесь будут появляться уведомления о ваших заказах</p>
         </div>
     </div>
 

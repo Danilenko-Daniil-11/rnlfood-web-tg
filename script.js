@@ -12,6 +12,7 @@ let currentOrderPage = 1;
 let ordersPerPage = 10;
 let favorites = new Set();
 let achievements = [];
+let notifications = [];
 let isParentMode = false;
 let isSimpleMode = false;
 let is8BitMode = false;
@@ -19,6 +20,163 @@ let isHighContrast = false;
 let voiceRecognition = null;
 let konamiCode = [];
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+
+// Функции для работы с уведомлениями
+async function loadNotifications() {
+    if (!currentUser) return;
+
+    try {
+        const data = await apiRequest('/api/notifications?limit=20');
+        notifications = data.notifications || [];
+
+        updateNotificationsBadge();
+        displayNotifications();
+
+    } catch (error) {
+        console.error('Ошибка загрузки уведомлений:', error);
+    }
+}
+
+function updateNotificationsBadge() {
+    const badge = document.getElementById('notifications-count');
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function displayNotifications() {
+    const container = document.getElementById('notifications-list');
+    const emptyState = document.getElementById('notifications-empty');
+
+    if (!container) return;
+
+    if (notifications.length === 0) {
+        container.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    container.style.display = 'block';
+    emptyState.style.display = 'none';
+    container.innerHTML = '';
+
+    notifications.forEach(notification => {
+        const notificationElement = createNotificationElement(notification);
+        container.appendChild(notificationElement);
+    });
+}
+
+function createNotificationElement(notification) {
+    const element = document.createElement('div');
+    element.className = `notification-item ${!notification.is_read ? 'unread' : ''}`;
+    element.setAttribute('data-id', notification.id);
+
+    const date = new Date(notification.created_at);
+    const timeAgo = getTimeAgo(date);
+
+    element.innerHTML = `
+        <div class="notification-icon">
+            <i class="${getNotificationIcon(notification.type)}"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title">${notification.title}</div>
+            <div class="notification-message">${notification.message}</div>
+            <div class="notification-time">${timeAgo}</div>
+        </div>
+        <div class="notification-actions">
+            ${!notification.is_read ? '<button class="btn-mark-read" onclick="markNotificationAsRead(' + notification.id + ')"><i class="fas fa-check"></i></button>' : ''}
+        </div>
+    `;
+
+    element.addEventListener('click', () => markNotificationAsRead(notification.id));
+    return element;
+}
+
+function getNotificationIcon(type) {
+    const icons = {
+        'order': 'fas fa-shopping-basket',
+        'info': 'fas fa-info-circle',
+        'warning': 'fas fa-exclamation-triangle',
+        'success': 'fas fa-check-circle',
+        'error': 'fas fa-exclamation-circle'
+    };
+    return icons[type] || 'fas fa-bell';
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'только что';
+    if (minutes < 60) return `${minutes} мин назад`;
+    if (hours < 24) return `${hours} ч назад`;
+    if (days < 7) return `${days} д назад`;
+
+    return date.toLocaleDateString('ru-RU');
+}
+
+async function markNotificationAsRead(notificationId) {
+    try {
+        await apiRequest(`/api/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+
+        // Обновляем локальный массив
+        const notification = notifications.find(n => n.id === notificationId);
+        if (notification) {
+            notification.is_read = true;
+        }
+
+        updateNotificationsBadge();
+        displayNotifications();
+
+    } catch (error) {
+        console.error('Ошибка отметки уведомления как прочитанного:', error);
+    }
+}
+
+async function markAllNotificationsAsRead() {
+    try {
+        await apiRequest('/api/notifications/read-all', {
+            method: 'PUT'
+        });
+
+        // Обновляем локальный массив
+        notifications.forEach(n => n.is_read = true);
+
+        updateNotificationsBadge();
+        displayNotifications();
+        showNotification('Все уведомления отмечены как прочитанные', 'success');
+
+    } catch (error) {
+        console.error('Ошибка отметки всех уведомлений как прочитанных:', error);
+    }
+}
+
+function toggleNotifications() {
+    const panel = document.getElementById('notifications-panel');
+    if (!panel) return;
+
+    // Закрываем корзину если открыта
+    const cart = document.getElementById('cart-summary');
+    if (cart && cart.classList.contains('active')) {
+        cart.classList.remove('active');
+    }
+
+    panel.classList.toggle('active');
+
+    if (panel.classList.contains('active')) {
+        loadNotifications();
+    }
+}
 
 // Инициализация переменных планировщика питания
 let currentWeekStart;
@@ -261,6 +419,7 @@ async function initializeApp() {
     await initializeAssortment();
     updateCart();
     await loadOrderHistory();
+    await loadNotifications();
     initializeAmountSelection();
     checkAuth();
     initParticleButtons();
@@ -2790,19 +2949,19 @@ function showFullOrderHistory() {
 async function loadAdminStats() {
     try {
         const data = await apiRequest('/api/admin/stats');
-        
+
         // Анимация чисел
         animateValue(document.getElementById('admin-total-users'), 0, data.users, 1000);
         animateValue(document.getElementById('admin-total-orders'), 0, data.total_orders, 1000);
         animateValue(document.getElementById('admin-today-orders'), 0, data.today_orders, 1000);
-        
+
         document.getElementById('admin-total-revenue').textContent = data.total_revenue.toFixed(2);
         document.getElementById('admin-today-revenue').textContent = data.today_revenue.toFixed(2);
-        
+
         // Популярные блюда
         const popularMealsList = document.getElementById('admin-popular-meals');
         popularMealsList.innerHTML = '';
-        
+
         data.popular_meals.forEach((meal, index) => {
             setTimeout(() => {
                 const mealItem = document.createElement('div');
@@ -2815,12 +2974,87 @@ async function loadAdminStats() {
                 slideIn(mealItem, 'up');
             }, index * 100);
         });
-        
+
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
         showNotification('Ошибка загрузки статистики', 'error');
     }
 }
+
+// Отправка уведомления админом
+async function sendAdminNotification() {
+    const title = document.getElementById('notification-title').value.trim();
+    const message = document.getElementById('notification-message').value.trim();
+    const type = document.getElementById('notification-type').value;
+    const target = document.getElementById('notification-target').value;
+    const userId = document.getElementById('notification-user-id').value.trim();
+
+    if (!title || !message) {
+        showNotification('Пожалуйста, заполните заголовок и текст уведомления', 'error');
+        return;
+    }
+
+    if (target === 'user' && !userId) {
+        showNotification('Пожалуйста, укажите ID пользователя', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const notificationData = {
+            title,
+            message,
+            type
+        };
+
+        if (target === 'user') {
+            notificationData.user_id = userId;
+            await apiRequest('/api/admin/notifications', {
+                method: 'POST',
+                body: notificationData
+            });
+        } else {
+            await apiRequest('/api/admin/notifications/broadcast', {
+                method: 'POST',
+                body: notificationData
+            });
+        }
+
+        // Очистка формы
+        document.getElementById('notification-title').value = '';
+        document.getElementById('notification-message').value = '';
+        document.getElementById('notification-type').value = 'info';
+        document.getElementById('notification-target').value = 'all';
+        document.getElementById('notification-user-id').value = '';
+
+        // Скрываем поле ID пользователя
+        document.getElementById('user-select-group').style.display = 'none';
+
+        showNotification('Уведомление успешно отправлено', 'success');
+
+    } catch (error) {
+        console.error('Ошибка отправки уведомления:', error);
+        showNotification('Ошибка отправки уведомления', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Обработчик изменения типа получателя уведомления
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationTarget = document.getElementById('notification-target');
+    if (notificationTarget) {
+        notificationTarget.addEventListener('change', function() {
+            const userSelectGroup = document.getElementById('user-select-group');
+            if (this.value === 'user') {
+                userSelectGroup.style.display = 'block';
+            } else {
+                userSelectGroup.style.display = 'none';
+            }
+        });
+    }
+});
 
 async function loadAdminOrders() {
     try {
