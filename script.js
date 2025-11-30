@@ -213,6 +213,263 @@ function slideIn(element, direction = 'up', duration = 400) {
     }, 50);
 }
 
+// Кэш для API запросов
+const apiCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
+
+// Debounce функция для оптимизации поиска
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Lazy loading для изображений
+function initLazyLoading() {
+    const images = document.querySelectorAll('img[data-src]');
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.remove('lazy');
+                observer.unobserve(img);
+            }
+        });
+    });
+
+    images.forEach(img => imageObserver.observe(img));
+}
+
+// Intersection Observer для бесконечной прокрутки
+function initInfiniteScroll() {
+    const sentinel = document.getElementById('scroll-sentinel');
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !isLoading) {
+                loadMoreProducts();
+            }
+        });
+    });
+
+    observer.observe(sentinel);
+}
+
+// Загрузка дополнительных продуктов
+let isLoading = false;
+let currentPage = 1;
+const PRODUCTS_PER_PAGE = 12;
+
+async function loadMoreProducts() {
+    if (isLoading) return;
+    isLoading = true;
+
+    try {
+        // Имитация загрузки (в реальном приложении здесь был бы API запрос)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const startIndex = currentPage * PRODUCTS_PER_PAGE;
+        const endIndex = startIndex + PRODUCTS_PER_PAGE;
+        const newProducts = products.slice(startIndex, endIndex);
+
+        if (newProducts.length > 0) {
+            const container = document.getElementById('items-container');
+            newProducts.forEach((product, index) => {
+                setTimeout(() => {
+                    const itemCard = createProductCard(product);
+                    container.appendChild(itemCard);
+                    slideIn(itemCard, 'up');
+                }, index * 50);
+            });
+
+            currentPage++;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки продуктов:', error);
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Создание карточки продукта
+function createProductCard(product) {
+    const quantity = cart[product.id] || 0;
+    const isFavorite = favorites.has(product.id);
+
+    const itemCard = document.createElement('div');
+    itemCard.className = 'item-card';
+    itemCard.setAttribute('data-category', product.category);
+    itemCard.setAttribute('data-vegetarian', product.isVegetarian);
+    itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
+    itemCard.setAttribute('data-price', product.price);
+    itemCard.setAttribute('data-calories', product.calories);
+
+    itemCard.innerHTML = `
+        ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
+        <button class="favorite-btn ${isFavorite ? 'active' : ''}"
+                data-product="${product.id}"
+                onclick="toggleFavorite('${product.id}')">
+            <i class="fas fa-heart"></i>
+        </button>
+        <div class="item-image">
+            <i class="${product.icon}"></i>
+        </div>
+        <div class="item-name">${product.name}</div>
+        <div class="item-description">${product.description || ''}</div>
+
+        <!-- Аллергены -->
+        <div class="allergens">
+            ${product.allergens.map(allergen => `
+                <div class="allergen ${allergen}" title="${getAllergenName(allergen)}">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            `).join('')}
+        </div>
+
+        <!-- Рейтинг -->
+        <div class="rating">
+            ${generateStarRating(product.rating)}
+        </div>
+
+        <div class="item-price">${product.price} ₴</div>
+        <div class="item-calories">${product.calories} ккал</div>
+        <div class="item-actions">
+            <div class="quantity-controls">
+                <button class="quantity-btn" onclick="decreaseQuantity('${product.id}')" ${quantity === 0 ? 'disabled' : ''}>
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="quantity" id="quantity-${product.id}">${quantity}</span>
+                <button class="quantity-btn" onclick="increaseQuantity('${product.id}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <button class="add-to-cart" onclick="addToCart('${product.id}')" ${quantity > 0 ? 'style="display:none"' : ''}>
+                <i class="fas fa-cart-plus"></i>
+            </button>
+        </div>
+    `;
+
+    return itemCard;
+}
+
+// Оптимизация производительности при большом количестве элементов
+function optimizePerformance() {
+    // Virtual scrolling для очень большого количества элементов
+    const container = document.getElementById('items-container');
+    if (!container) return;
+
+    const items = container.children;
+    if (items.length > 50) {
+        // Добавляем класс для оптимизации CSS
+        container.classList.add('performance-optimized');
+
+        // Используем requestAnimationFrame для плавных обновлений
+        requestAnimationFrame(() => {
+            // Оптимизированные обновления DOM
+            updateVisibleItems();
+        });
+    }
+}
+
+function updateVisibleItems() {
+    const container = document.getElementById('items-container');
+    const items = Array.from(container.children);
+    const containerRect = container.getBoundingClientRect();
+
+    items.forEach(item => {
+        const itemRect = item.getBoundingClientRect();
+        const isVisible = itemRect.bottom >= containerRect.top - 100 &&
+                         itemRect.top <= containerRect.bottom + 100;
+
+        if (isVisible) {
+            item.classList.add('visible');
+        } else {
+            item.classList.remove('visible');
+        }
+    });
+}
+
+// Service Worker для кэширования
+function initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        });
+    }
+}
+
+// Web Workers для тяжелых вычислений
+function initWebWorkers() {
+    // Worker для обработки поиска
+    if (window.Worker) {
+        const searchWorker = new Worker('/search-worker.js');
+
+        searchWorker.onmessage = function(e) {
+            const results = e.data;
+            displaySearchResults(results);
+        };
+
+        // Отправка данных воркеру
+        document.getElementById('search-input').addEventListener('input', debounce(function() {
+            const query = this.value;
+            searchWorker.postMessage({
+                action: 'search',
+                query: query,
+                products: products
+            });
+        }, 300));
+    }
+}
+
+function displaySearchResults(results) {
+    const container = document.getElementById('items-container');
+    container.innerHTML = '';
+
+    if (results.length === 0) {
+        container.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+        return;
+    }
+
+    results.forEach(product => {
+        const itemCard = createProductCard(product);
+        container.appendChild(itemCard);
+    });
+}
+
+// Оптимизация загрузки шрифтов
+function optimizeFonts() {
+    // Preload критических шрифтов
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'preload';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+    fontLink.as = 'style';
+    document.head.appendChild(fontLink);
+
+    // Font Display для лучшего UX
+    const fontCSS = document.createElement('style');
+    fontCSS.textContent = `
+        @font-face {
+            font-family: 'Inter';
+            font-display: swap;
+        }
+    `;
+    document.head.appendChild(fontCSS);
+}
+
 // Функции для работы с API
 async function apiRequest(endpoint, options = {}) {
     const token = localStorage.getItem('token');
@@ -230,6 +487,15 @@ async function apiRequest(endpoint, options = {}) {
         config.body = JSON.stringify(config.body);
     }
 
+    // Проверяем кэш для GET запросов
+    const cacheKey = `${endpoint}_${JSON.stringify(config.body || {})}`;
+    if (config.method === 'GET' || !config.method) {
+        const cached = apiCache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+            return cached.data;
+        }
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         const data = await response.json();
@@ -238,11 +504,24 @@ async function apiRequest(endpoint, options = {}) {
             throw new Error(data.error || 'Ошибка сервера');
         }
 
+        // Кэшируем успешные GET запросы
+        if ((config.method === 'GET' || !config.method) && data) {
+            apiCache.set(cacheKey, {
+                data: data,
+                timestamp: Date.now()
+            });
+        }
+
         return data;
     } catch (error) {
         console.error(`API Error (${endpoint}):`, error);
         throw error;
     }
+}
+
+// Очистка кэша при изменениях данных
+function clearApiCache() {
+    apiCache.clear();
 }
 
 // Инициализация при загрузке страницы
