@@ -3015,58 +3015,49 @@
                 flex-direction: column;
                 gap: 15px;
             }
-            
+
             .header-actions {
                 width: 100%;
                 justify-content: space-between;
             }
-            
+
             .hero-title {
                 font-size: 2em;
             }
-            
+
             .payment-methods {
                 grid-template-columns: 1fr;
             }
-            
+
             .admin-stats {
                 grid-template-columns: 1fr;
             }
-            
+
             .page-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .search-bar {
                 width: 100%;
             }
-            
+
             .header-controls {
                 flex-direction: column;
                 width: 100%;
             }
-            
+
             .filter-controls {
                 width: 100%;
                 justify-content: space-between;
             }
-            
+
             .bottom-nav {
                 display: flex;
             }
-            
+
             .main-content {
                 padding-bottom: 80px;
-            }
-            
-            .cart-summary {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                right: auto;
-                border-radius: var(--radius) var(--radius) 0 0;
             }
         }
 
