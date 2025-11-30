@@ -3584,9 +3584,27 @@ function loadTheme() {
     setTheme(savedTheme);
 }
 
+// Вспомогательные функции для работы с cookies
+function setCookie(name, value, days = 365) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax`;
+}
+
 // Загрузка состояния фоновых эффектов
 function loadBackgroundEffects() {
-    const savedEffects = localStorage.getItem('backgroundEffects');
+    const savedEffects = getCookie('backgroundEffects');
     if (savedEffects !== null) {
         isBackgroundEffects = savedEffects === 'true';
     }
@@ -3782,9 +3800,9 @@ function applyColorTheme(themeKey) {
         activeOption.classList.add('active');
     }
 
-    // Сохраняем в localStorage
-    localStorage.setItem('colorTheme', themeKey);
-    localStorage.setItem('customTheme', 'false');
+    // Сохраняем в cookies
+    setCookie('colorTheme', themeKey);
+    setCookie('customTheme', 'false');
 
     showNotification(`Тема "${theme.name}" применена!`, 'success');
 
@@ -3797,28 +3815,28 @@ function applyCustomTheme() {
     const primary = document.getElementById('custom-primary').value;
     const secondary = document.getElementById('custom-secondary').value;
     const accent = document.getElementById('custom-accent').value;
-    
+
     // Рассчитываем тёмные версии цветов
     const primaryDark = shadeColor(primary, -20);
-    
+
     // Применяем цвета
     document.documentElement.style.setProperty('--primary-color', primary);
     document.documentElement.style.setProperty('--primary-dark', primaryDark);
     document.documentElement.style.setProperty('--secondary-color', secondary);
     document.documentElement.style.setProperty('--accent-color', accent);
-    
+
     // Сохраняем кастомные цвета
-    localStorage.setItem('customPrimary', primary);
-    localStorage.setItem('customSecondary', secondary);
-    localStorage.setItem('customAccent', accent);
-    localStorage.setItem('customTheme', 'true');
-    localStorage.setItem('colorTheme', 'custom');
-    
+    setCookie('customPrimary', primary);
+    setCookie('customSecondary', secondary);
+    setCookie('customAccent', accent);
+    setCookie('customTheme', 'true');
+    setCookie('colorTheme', 'custom');
+
     currentColorScheme = 'custom';
-    
+
     showNotification('Пользовательская тема применена!', 'success');
     animateThemeChange();
-    
+
     // Закрываем модальное окно через секунду
     setTimeout(() => {
         closeModal('theme-palette-modal');
@@ -3852,10 +3870,10 @@ function shadeColor(color, percent) {
 
 // Загрузка кастомных цветов
 function loadCustomColors() {
-    const customPrimary = localStorage.getItem('customPrimary');
-    const customSecondary = localStorage.getItem('customSecondary');
-    const customAccent = localStorage.getItem('customAccent');
-    
+    const customPrimary = getCookie('customPrimary');
+    const customSecondary = getCookie('customSecondary');
+    const customAccent = getCookie('customAccent');
+
     if (customPrimary) {
         document.getElementById('custom-primary').value = customPrimary;
     }
@@ -3869,21 +3887,21 @@ function loadCustomColors() {
 
 // Загрузка сохранённой темы при запуске
 function loadColorTheme() {
-    const savedTheme = localStorage.getItem('colorTheme');
-    const isCustomTheme = localStorage.getItem('customTheme') === 'true';
-    
+    const savedTheme = getCookie('colorTheme');
+    const isCustomTheme = getCookie('customTheme') === 'true';
+
     if (isCustomTheme) {
         // Загружаем кастомную тему
-        const primary = localStorage.getItem('customPrimary') || '#00b377';
-        const secondary = localStorage.getItem('customSecondary') || '#667eea';
-        const accent = localStorage.getItem('customAccent') || '#764ba2';
+        const primary = getCookie('customPrimary') || '#00b377';
+        const secondary = getCookie('customSecondary') || '#667eea';
+        const accent = getCookie('customAccent') || '#764ba2';
         const primaryDark = shadeColor(primary, -20);
-        
+
         document.documentElement.style.setProperty('--primary-color', primary);
         document.documentElement.style.setProperty('--primary-dark', primaryDark);
         document.documentElement.style.setProperty('--secondary-color', secondary);
         document.documentElement.style.setProperty('--accent-color', accent);
-        
+
         currentColorScheme = 'custom';
     } else if (savedTheme && COLOR_THEMES[savedTheme]) {
         // Загружаем предустановленную тему
@@ -3916,12 +3934,12 @@ function animateThemeChange() {
 
 // Функция сброса темы к стандартной
 function resetToDefaultTheme() {
-    localStorage.removeItem('colorTheme');
-    localStorage.removeItem('customTheme');
-    localStorage.removeItem('customPrimary');
-    localStorage.removeItem('customSecondary');
-    localStorage.removeItem('customAccent');
-    
+    deleteCookie('colorTheme');
+    deleteCookie('customTheme');
+    deleteCookie('customPrimary');
+    deleteCookie('customSecondary');
+    deleteCookie('customAccent');
+
     applyColorTheme('emerald');
     showNotification('Тема сброшена к стандартной!', 'info');
 }
@@ -3966,6 +3984,8 @@ function loadMealPlan() {
     const savedPlan = localStorage.getItem('mealPlan');
     if (savedPlan) {
         mealPlan = JSON.parse(savedPlan);
+    } else {
+        mealPlan = {};
     }
 }
 

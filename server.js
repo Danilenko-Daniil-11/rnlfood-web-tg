@@ -161,8 +161,8 @@ app.post('/api/login', async (req, res) => {
         // Находим пользователя
         const userResult = await pool.query(`
             SELECT u.*, p.full_name, p.class_name, p.balance, ur.role
-            FROM users u 
-            LEFT JOIN profiles p ON u.id = p.user_id 
+            FROM users u
+            LEFT JOIN profiles p ON u.id = p.user_id
             LEFT JOIN user_roles ur ON u.id = ur.user_id
             WHERE u.username = $1
         `, [username]);
@@ -177,6 +177,15 @@ app.post('/api/login', async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(400).json({ error: 'Неверный логин или пароль' });
+        }
+
+        // Исправляем отрицательный баланс
+        let userBalance = parseFloat(user.balance);
+        if (userBalance < 0) {
+            console.warn('Обнаружен отрицательный баланс пользователя', user.id, ':', userBalance, '- устанавливаем в 0');
+            userBalance = 0.00;
+            // Обновляем в базе данных
+            await pool.query('UPDATE profiles SET balance = 0 WHERE user_id = $1', [user.id]);
         }
 
         // Генерируем JWT токен
@@ -202,7 +211,7 @@ app.post('/api/login', async (req, res) => {
                 username: user.username,
                 full_name: user.full_name,
                 class_name: user.class_name,
-                balance: parseFloat(user.balance),
+                balance: userBalance,
                 role: user.role
             }
         });
