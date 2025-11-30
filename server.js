@@ -8,10 +8,6 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { Telegraf, Markup, session } from 'telegraf';
-import compression from 'compression';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import NodeCache from 'node-cache';
 
 dotenv.config();
 
@@ -22,64 +18,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'rnl-food-fallback-secret';
 
-// Кэш для часто используемых данных
-const cache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 минут TTL
-
-// Подключение к Neon PostgreSQL с оптимизациями
+// Подключение к Neon PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
-    },
-    max: 20, // Максимум 20 соединений
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-});
-
-// Middleware для производительности
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-        },
-    },
-}));
-
-app.use(compression({
-    level: 6,
-    threshold: 1024,
-    filter: (req, res) => {
-        if (req.headers['x-no-compression']) {
-            return false;
-        }
-        return compression.filter(req, res);
     }
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Слишком много запросов с этого IP, попробуйте позже.',
-    standardHeaders: true,
-    legacyHeaders: false,
 });
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 auth attempts per windowMs
-    message: 'Слишком много попыток авторизации, попробуйте позже.',
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-app.use(limiter);
-app.use('/api/login', authLimiter);
-app.use('/api/register', authLimiter);
 
 // Middleware
 app.use(cors());
@@ -280,23 +225,17 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true, message: 'Выход выполнен успешно' });
 });
 
-// API для получения меню с кэшированием
+// API для получения меню
 app.get('/api/menu', async (req, res) => {
     try {
-        // Проверяем кэш
-        const cachedMenu = cache.get('menu');
-        if (cachedMenu) {
-            return res.json(cachedMenu);
-        }
-
         const result = await pool.query(`
-            SELECT m.*, mc.name as category_name
-            FROM meals m
-            LEFT JOIN meal_categories mc ON m.category_id = mc.id
-            WHERE m.is_available = true
+            SELECT m.*, mc.name as category_name 
+            FROM meals m 
+            LEFT JOIN meal_categories mc ON m.category_id = mc.id 
+            WHERE m.is_available = true 
             ORDER BY mc.sort_order, m.name
         `);
-
+        
         const menu = result.rows.map(item => ({
             id: item.id,
             name: item.name,
@@ -308,10 +247,7 @@ app.get('/api/menu', async (req, res) => {
             is_vegetarian: item.is_vegetarian,
             preparation_time: item.preparation_time
         }));
-
-        // Кэшируем результат
-        cache.set('menu', menu);
-
+        
         res.json(menu);
     } catch (error) {
         console.error('Error fetching menu:', error);
@@ -319,24 +255,14 @@ app.get('/api/menu', async (req, res) => {
     }
 });
 
-// API для получения категорий с кэшированием
+// API для получения категорий
 app.get('/api/categories', async (req, res) => {
     try {
-        // Проверяем кэш
-        const cachedCategories = cache.get('categories');
-        if (cachedCategories) {
-            return res.json(cachedCategories);
-        }
-
         const result = await pool.query(`
-            SELECT * FROM meal_categories
-            WHERE is_active = true
+            SELECT * FROM meal_categories 
+            WHERE is_active = true 
             ORDER BY sort_order
         `);
-
-        // Кэшируем результат
-        cache.set('categories', result.rows);
-
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching categories:', error);
@@ -727,16 +653,13 @@ app.get('/api/admin/meals', authenticateToken, requireAdmin, async (req, res) =>
 app.post('/api/admin/meals', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { name, price, category_id, description, is_available, preparation_time } = req.body;
-
+        
         const result = await pool.query(`
             INSERT INTO meals (name, price, category_id, description, is_available, preparation_time)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `, [name, price, category_id, description, is_available, preparation_time]);
-
-        // Очищаем кэш меню при добавлении нового блюда
-        cache.del('menu');
-
+        
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error creating meal:', error);
@@ -748,22 +671,19 @@ app.put('/api/admin/meals/:id', authenticateToken, requireAdmin, async (req, res
     try {
         const { id } = req.params;
         const { name, price, category_id, description, is_available, preparation_time } = req.body;
-
+        
         const result = await pool.query(`
-            UPDATE meals
-            SET name = $1, price = $2, category_id = $3, description = $4,
+            UPDATE meals 
+            SET name = $1, price = $2, category_id = $3, description = $4, 
                 is_available = $5, preparation_time = $6, updated_at = NOW()
             WHERE id = $7
             RETURNING *
         `, [name, price, category_id, description, is_available, preparation_time, id]);
-
+        
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Блюдо не найдено' });
         }
-
-        // Очищаем кэш меню при обновлении
-        cache.del('menu');
-
+        
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating meal:', error);
