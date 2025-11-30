@@ -222,6 +222,7 @@ async function apiRequest(endpoint, options = {}) {
             ...(token && { 'Authorization': `Bearer ${token}` }),
             ...options.headers
         },
+        credentials: 'include', // Include cookies in requests
         ...options
     };
 
@@ -232,11 +233,11 @@ async function apiRequest(endpoint, options = {}) {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || 'Ошибка сервера');
         }
-        
+
         return data;
     } catch (error) {
         console.error(`API Error (${endpoint}):`, error);
@@ -780,17 +781,28 @@ async function register() {
     }
 }
 
-function logout() {
+async function logout() {
+    try {
+        // Call logout API to clear server-side cookies
+        await apiRequest('/api/logout', {
+            method: 'POST'
+        });
+    } catch (error) {
+        console.error('Logout API error:', error);
+        // Continue with client-side logout even if API call fails
+    }
+
+    // Clear client-side data
     currentUser = null;
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');
     sessionStorage.removeItem('currentUser');
     document.getElementById('logout-btn').style.display = 'none';
     document.getElementById('admin-btn').style.display = 'none';
-    
+
     cart = {};
     updateCart();
-    
+
     showNotification('Вы вышли из системы', 'success');
     goTo('start');
 }

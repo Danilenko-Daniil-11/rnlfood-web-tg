@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { Telegraf, Markup, session } from 'telegraf';
 
@@ -27,6 +28,7 @@ const pool = new Pool({
 
 // Middleware
 app.use(cors());
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
@@ -34,12 +36,16 @@ app.use(express.json());
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+    const cookieToken = req.cookies.token;
 
-    if (!token) {
+    // Check both header and cookie for token
+    const finalToken = token || cookieToken;
+
+    if (!finalToken) {
         return res.status(401).json({ error: 'Токен доступа отсутствует' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(finalToken, JWT_SECRET, (err, user) => {
         if (err) {
             return res.status(403).json({ error: 'Неверный токен' });
         }
@@ -180,9 +186,17 @@ app.post('/api/login', async (req, res) => {
             { expiresIn: '24h' }
         );
 
+        // Устанавливаем HTTP-only cookie для persistent login
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+
         res.json({
             success: true,
-            token,
+            token, // Still send token for backward compatibility
             user: {
                 id: user.id,
                 username: user.username,
@@ -197,6 +211,18 @@ app.post('/api/login', async (req, res) => {
         console.error('Error during login:', error);
         res.status(500).json({ error: 'Ошибка входа' });
     }
+});
+
+// API для выхода из системы
+app.post('/api/logout', (req, res) => {
+    // Очищаем cookie с токеном
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+
+    res.json({ success: true, message: 'Выход выполнен успешно' });
 });
 
 // API для получения меню
