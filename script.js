@@ -215,12 +215,14 @@ function slideIn(element, direction = 'up', duration = 400) {
 
 // Функции для работы с API
 async function apiRequest(endpoint, options = {}) {
+    const token = localStorage.getItem('token');
     const config = {
         headers: {
             'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
             ...options.headers
         },
-        credentials: 'include', // Include cookies in requests (important for auth)
+        credentials: 'include', // Include cookies in requests
         ...options
     };
 
@@ -230,24 +232,6 @@ async function apiRequest(endpoint, options = {}) {
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-
-        // Handle 401 Unauthorized - user needs to login
-        if (response.status === 401) {
-            // Clear local user data and redirect to login
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            sessionStorage.removeItem('currentUser');
-            document.getElementById('logout-btn').style.display = 'none';
-            document.getElementById('admin-btn').style.display = 'none';
-
-            // Only redirect if not already on login page
-            if (!window.location.hash.includes('login')) {
-                showNotification('Сессия истекла. Пожалуйста, войдите снова.', 'error');
-                goTo('login');
-            }
-            return null;
-        }
-
         const data = await response.json();
 
         if (!response.ok) {
@@ -670,44 +654,28 @@ function hideExitPopup() {
 }
 
 // Проверка авторизации
-async function checkAuth() {
+function checkAuth() {
+    const savedUser = localStorage.getItem('currentUser');
     const logoutBtn = document.getElementById('logout-btn');
     const adminBtn = document.getElementById('admin-btn');
-
-    try {
-        // Try to get current user info from API (this will use cookies automatically)
-        const data = await apiRequest('/api/auth/me');
-
-        if (data && data.user) {
-            currentUser = data.user;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-            logoutBtn.style.display = 'flex';
-
-            // Показываем кнопку админа если пользователь админ
-            if (currentUser.role === 'admin') {
-                adminBtn.style.display = 'flex';
-            } else {
-                adminBtn.style.display = 'none';
-            }
-
-            if (window.location.hash !== '#start') {
-                goTo('profile');
-            }
+    
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        logoutBtn.style.display = 'flex';
+        
+        // Показываем кнопку админа если пользователь админ
+        if (currentUser.role === 'admin') {
+            adminBtn.style.display = 'flex';
         } else {
-            // No valid session
-            logoutBtn.style.display = 'none';
             adminBtn.style.display = 'none';
-            currentUser = null;
-            localStorage.removeItem('currentUser');
         }
-    } catch (error) {
-        // If API call fails (401 or other error), user is not authenticated
-        console.warn('Auth check failed:', error.message);
+        
+        if (window.location.hash !== '#start') {
+            goTo('profile');
+        }
+    } else {
         logoutBtn.style.display = 'none';
         adminBtn.style.display = 'none';
-        currentUser = null;
-        localStorage.removeItem('currentUser');
     }
 }
 
