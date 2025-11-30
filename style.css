@@ -4105,6 +4105,65 @@
     color: var(--primary-color);
 }
 
+/* Анимированная кнопка копирования */
+.animated-copy-btn {
+    background-color: #f2f7fa;
+    width: 100px;
+    height: 30px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    transition-duration: 700ms;
+    position: relative;
+}
+
+.animated-copy-btn span:first-child {
+    color: #0e418f;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.animated-copy-btn span:last-child {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: #b5ccf3;
+    opacity: 0;
+    transform: translateY(100%) translateX(-50%);
+    height: 14px;
+    line-height: 13px;
+}
+
+.animated-copy-btn:focus {
+    background-color: #0e418f;
+    width: 120px;
+    height: 40px;
+    transition-delay: 100ms;
+    transition-duration: 500ms;
+    outline: none;
+}
+
+.animated-copy-btn:focus span:first-child {
+    color: #b5ccf3;
+    transform: translateX(-50%) translateY(-150%);
+    opacity: 0;
+    transition-duration: 500ms;
+}
+
+.animated-copy-btn:focus span:last-child {
+    transform: translateX(-50%) translateY(-50%);
+    opacity: 1;
+    transition-delay: 300ms;
+    transition-duration: 500ms;
+}
+
 .notifications-count {
     position: absolute;
     top: -8px;
