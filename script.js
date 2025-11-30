@@ -16,9 +16,50 @@ let isParentMode = false;
 let isSimpleMode = false;
 let is8BitMode = false;
 let isHighContrast = false;
+let isBackgroundEffects = true;
 let voiceRecognition = null;
 let konamiCode = [];
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+
+// Быстрые комбо-наборы
+const QUICK_COMBOS = [
+    {
+        id: 'student_combo',
+        name: 'Студенческий набор',
+        description: 'Популярные блюда для студентов',
+        items: ['1', '2', '3'], // IDs блюд
+        discount: 15, // Процент скидки
+        icon: 'fas fa-graduation-cap',
+        color: '#667eea'
+    },
+    {
+        id: 'healthy_combo',
+        name: 'Здоровое питание',
+        description: 'Легкие и полезные блюда',
+        items: ['6', '2', '4'],
+        discount: 20,
+        icon: 'fas fa-leaf',
+        color: '#00b377'
+    },
+    {
+        id: 'family_combo',
+        name: 'Семейный обед',
+        description: 'Для всей семьи',
+        items: ['1', '5', '3', '4'],
+        discount: 25,
+        icon: 'fas fa-users',
+        color: '#f093fb'
+    },
+    {
+        id: 'sweet_combo',
+        name: 'Сладкий набор',
+        description: 'Десерты и напитки',
+        items: ['5', '3', '4'],
+        discount: 18,
+        icon: 'fas fa-birthday-cake',
+        color: '#f5576c'
+    }
+];
 
 // Инициализация переменных планировщика питания
 let currentWeekStart;
@@ -36,127 +77,386 @@ function initializeMealPlannerVariables() {
 
 
 
-// Цветовые темы
+// Цветовые темы (пастельные цвета - расширенная коллекция)
 const COLOR_THEMES = {
+    // Весенние темы
     'emerald': {
-        name: 'Изумрудная',
-        primary: '#10b981',
-        primaryDark: '#059669',
-        secondary: '#8b5cf6',
-        accent: '#ec4899',
-        gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+        name: 'Мятная весна',
+        primary: '#A8DADC',
+        primaryDark: '#76C893',
+        secondary: '#F4A261',
+        accent: '#E76F51',
+        gradient: 'linear-gradient(135deg, #A8DADC 0%, #76C893 100%)'
     },
     'rose': {
-        name: 'Розовая',
-        primary: '#f43f5e',
-        primaryDark: '#e11d48',
-        secondary: '#8b5cf6',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)'
+        name: 'Розовый рассвет',
+        primary: '#F7B7C5',
+        primaryDark: '#E8A3B8',
+        secondary: '#B8D4E3',
+        accent: '#F4A261',
+        gradient: 'linear-gradient(135deg, #F7B7C5 0%, #E8A3B8 100%)'
     },
-    'amber': {
-        name: 'Янтарная',
-        primary: '#f59e0b',
-        primaryDark: '#d97706',
-        secondary: '#ec4899',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    'cherry-blossom': {
+        name: 'Сакура',
+        primary: '#F8C8DC',
+        primaryDark: '#F4A7C4',
+        secondary: '#E6E6FA',
+        accent: '#FFB6C1',
+        gradient: 'linear-gradient(135deg, #F8C8DC 0%, #E6E6FA 50%, #FFB6C1 100%)'
     },
+    'butterfly': {
+        name: 'Бабочка',
+        primary: '#E6E6FA',
+        primaryDark: '#D8BFD8',
+        secondary: '#F0E68C',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #E6E6FA 0%, #F0E68C 50%, #FFE4B5 100%)'
+    },
+
+    // Летние темы
     'sky': {
-        name: 'Небесная',
-        primary: '#0ea5e9',
-        primaryDark: '#0284c7',
-        secondary: '#8b5cf6',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)'
-    },
-    'violet': {
-        name: 'Фиолетовая',
-        primary: '#8b5cf6',
-        primaryDark: '#7c3aed',
-        secondary: '#ec4899',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
-    },
-    'cyan': {
-        name: 'Бирюзовая',
-        primary: '#06b6d4',
-        primaryDark: '#0891b2',
-        secondary: '#8b5cf6',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
-    },
-    'lime': {
-        name: 'Лаймовая',
-        primary: '#84cc16',
-        primaryDark: '#65a30d',
-        secondary: '#0ea5e9',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)'
-    },
-    'orange': {
-        name: 'Апельсиновая',
-        primary: '#f97316',
-        primaryDark: '#ea580c',
-        secondary: '#ec4899',
-        accent: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
-    },
-    'pink': {
-        name: 'Розовое золото',
-        primary: '#ec4899',
-        primaryDark: '#db2777',
-        secondary: '#f59e0b',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
-    },
-    'indigo': {
-        name: 'Индиго',
-        primary: '#6366f1',
-        primaryDark: '#4f46e5',
-        secondary: '#ec4899',
-        accent: '#10b981',
-        gradient: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-    },
-    'gold': {
-        name: 'Золотая',
-        primary: '#fbbf24',
-        primaryDark: '#d97706',
-        secondary: '#8b5cf6',
-        accent: '#ec4899',
-        gradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)'
-    },
-    'sunset': {
-        name: 'Закатная',
-        primary: '#f97316',
-        primaryDark: '#c2410c',
-        secondary: '#ec4899',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)'
+        name: 'Летнее небо',
+        primary: '#AED6F1',
+        primaryDark: '#85C1E9',
+        secondary: '#F7B7C5',
+        accent: '#A8DADC',
+        gradient: 'linear-gradient(135deg, #AED6F1 0%, #85C1E9 100%)'
     },
     'ocean': {
-        name: 'Океанская',
-        primary: '#06b6d4',
-        primaryDark: '#0e7490',
-        secondary: '#3b82f6',
-        accent: '#8b5cf6',
-        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)'
+        name: 'Океанская волна',
+        primary: '#AED6F1',
+        primaryDark: '#85C1E9',
+        secondary: '#5DADE2',
+        accent: '#D7BDE2',
+        gradient: 'linear-gradient(135deg, #AED6F1 0%, #5DADE2 50%, #D7BDE2 100%)'
     },
-    'forest': {
-        name: 'Лесная',
-        primary: '#16a34a',
-        primaryDark: '#15803d',
-        secondary: '#65a30d',
-        accent: '#ca8a04',
-        gradient: 'linear-gradient(135deg, #16a34a 0%, #15803d 50%, #14532d 100%)'
+    'tropical': {
+        name: 'Тропическая',
+        primary: '#87CEEB',
+        primaryDark: '#4682B4',
+        secondary: '#98FB98',
+        accent: '#F0E68C',
+        gradient: 'linear-gradient(135deg, #87CEEB 0%, #98FB98 50%, #F0E68C 100%)'
+    },
+    'beach': {
+        name: 'Пляжная',
+        primary: '#F5DEB3',
+        primaryDark: '#DEB887',
+        secondary: '#87CEEB',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F5DEB3 0%, #87CEEB 50%, #FFE4B5 100%)'
+    },
+    'sunflower': {
+        name: 'Подсолнух',
+        primary: '#FFFACD',
+        primaryDark: '#F0E68C',
+        secondary: '#FFE4B5',
+        accent: '#DDA0DD',
+        gradient: 'linear-gradient(135deg, #FFFACD 0%, #FFE4B5 50%, #DDA0DD 100%)'
+    },
+
+    // Осенние темы
+    'amber': {
+        name: 'Осенний янтарь',
+        primary: '#F7DC6F',
+        primaryDark: '#F4C430',
+        secondary: '#A8DADC',
+        accent: '#F7B7C5',
+        gradient: 'linear-gradient(135deg, #F7DC6F 0%, #F4C430 100%)'
+    },
+    'autumn-leaves': {
+        name: 'Осенние листья',
+        primary: '#DEB887',
+        primaryDark: '#D2691E',
+        secondary: '#CD853F',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #DEB887 0%, #CD853F 50%, #FFE4B5 100%)'
+    },
+    'pumpkin': {
+        name: 'Тыквенная',
+        primary: '#FFA07A',
+        primaryDark: '#FF6347',
+        secondary: '#F5DEB3',
+        accent: '#DDA0DD',
+        gradient: 'linear-gradient(135deg, #FFA07A 0%, #F5DEB3 50%, #DDA0DD 100%)'
+    },
+    'maple': {
+        name: 'Кленовая',
+        primary: '#DC143C',
+        primaryDark: '#B22222',
+        secondary: '#FFD700',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #DC143C 0%, #FFD700 50%, #FFE4B5 100%)'
+    },
+
+    // Зимние темы
+    'snow': {
+        name: 'Снежная',
+        primary: '#F8F8FF',
+        primaryDark: '#E6E6FA',
+        secondary: '#B0E0E6',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F8F8FF 0%, #B0E0E6 50%, #FFE4B5 100%)'
+    },
+    'arctic': {
+        name: 'Арктическая',
+        primary: '#E6E6FA',
+        primaryDark: '#D8BFD8',
+        secondary: '#87CEEB',
+        accent: '#F0FFFF',
+        gradient: 'linear-gradient(135deg, #E6E6FA 0%, #87CEEB 50%, #F0FFFF 100%)'
+    },
+    'winter-berry': {
+        name: 'Зимняя ягода',
+        primary: '#FFE4E1',
+        primaryDark: '#FFB6C1',
+        secondary: '#E6E6FA',
+        accent: '#F0FFFF',
+        gradient: 'linear-gradient(135deg, #FFE4E1 0%, #E6E6FA 50%, #F0FFFF 100%)'
+    },
+
+    // Фруктовые темы
+    'lemon': {
+        name: 'Лимонная',
+        primary: '#FFFACD',
+        primaryDark: '#F0E68C',
+        secondary: '#FFE4B5',
+        accent: '#F5DEB3',
+        gradient: 'linear-gradient(135deg, #FFFACD 0%, #FFE4B5 50%, #F5DEB3 100%)'
     },
     'berry': {
-        name: 'Ягодная',
-        primary: '#dc2626',
-        primaryDark: '#b91c1c',
-        secondary: '#ec4899',
-        accent: '#7c3aed',
-        gradient: 'linear-gradient(135deg, #dc2626 0%, #ec4899 50%, #7c3aed 100%)'
+        name: 'Ягодная фантазия',
+        primary: '#F5B7B1',
+        primaryDark: '#EC7063',
+        secondary: '#F7B7C5',
+        accent: '#C39BD3',
+        gradient: 'linear-gradient(135deg, #F5B7B1 0%, #F7B7C5 50%, #C39BD3 100%)'
+    },
+    'citrus': {
+        name: 'Цитрусовая',
+        primary: '#FFE4B5',
+        primaryDark: '#FFDAB9',
+        secondary: '#FFFACD',
+        accent: '#F0E68C',
+        gradient: 'linear-gradient(135deg, #FFE4B5 0%, #FFFACD 50%, #F0E68C 100%)'
+    },
+    'grape': {
+        name: 'Виноградная',
+        primary: '#DDA0DD',
+        primaryDark: '#BA55D3',
+        secondary: '#E6E6FA',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #DDA0DD 0%, #E6E6FA 50%, #FFE4B5 100%)'
+    },
+
+    // Цветочные темы
+    'violet': {
+        name: 'Фиалковая',
+        primary: '#D7BDE2',
+        primaryDark: '#C39BD3',
+        secondary: '#F7B7C5',
+        accent: '#F7DC6F',
+        gradient: 'linear-gradient(135deg, #D7BDE2 0%, #C39BD3 100%)'
+    },
+    'lavender': {
+        name: 'Лавандовое поле',
+        primary: '#E6E6FA',
+        primaryDark: '#D8BFD8',
+        secondary: '#F5DEB3',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #E6E6FA 0%, #F5DEB3 50%, #FFE4B5 100%)'
+    },
+    'daisy': {
+        name: 'Ромашковая',
+        primary: '#FFFFFF',
+        primaryDark: '#F5F5F5',
+        secondary: '#FFFACD',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #FFFFFF 0%, #FFFACD 50%, #FFE4B5 100%)'
+    },
+    'tulip': {
+        name: 'Тюльпановая',
+        primary: '#FFB6C1',
+        primaryDark: '#FF69B4',
+        secondary: '#FFE4B5',
+        accent: '#E6E6FA',
+        gradient: 'linear-gradient(135deg, #FFB6C1 0%, #FFE4B5 50%, #E6E6FA 100%)'
+    },
+
+    // Природные темы
+    'forest': {
+        name: 'Лесная тишина',
+        primary: '#ABEBC6',
+        primaryDark: '#82E0AA',
+        secondary: '#D5F4E6',
+        accent: '#F9E79F',
+        gradient: 'linear-gradient(135deg, #ABEBC6 0%, #82E0AA 50%, #D5F4E6 100%)'
+    },
+    'mountain': {
+        name: 'Горная',
+        primary: '#F5F5DC',
+        primaryDark: '#EEE8AA',
+        secondary: '#B0C4DE',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F5F5DC 0%, #B0C4DE 50%, #FFE4B5 100%)'
+    },
+    'desert': {
+        name: 'Пустынная',
+        primary: '#F4A460',
+        primaryDark: '#D2691E',
+        secondary: '#FFE4B5',
+        accent: '#F5DEB3',
+        gradient: 'linear-gradient(135deg, #F4A460 0%, #FFE4B5 50%, #F5DEB3 100%)'
+    },
+    'meadow': {
+        name: 'Луговая',
+        primary: '#98FB98',
+        primaryDark: '#90EE90',
+        secondary: '#FFFACD',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #98FB98 0%, #FFFACD 50%, #FFE4B5 100%)'
+    },
+
+    // Тематические темы
+    'unicorn': {
+        name: 'Единорог',
+        primary: '#E6E6FA',
+        primaryDark: '#D8BFD8',
+        secondary: '#FFB6C1',
+        accent: '#FFFACD',
+        gradient: 'linear-gradient(135deg, #E6E6FA 0%, #FFB6C1 50%, #FFFACD 100%)'
+    },
+    'candy': {
+        name: 'Конфетная',
+        primary: '#FFB6C1',
+        primaryDark: '#FF69B4',
+        secondary: '#FFFACD',
+        accent: '#E6E6FA',
+        gradient: 'linear-gradient(135deg, #FFB6C1 0%, #FFFACD 50%, #E6E6FA 100%)'
+    },
+    'cloud': {
+        name: 'Облачная',
+        primary: '#F5F5F5',
+        primaryDark: '#E6E6FA',
+        secondary: '#B0E0E6',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F5F5F5 0%, #B0E0E6 50%, #FFE4B5 100%)'
+    },
+    'rainbow': {
+        name: 'Радужная',
+        primary: '#FFB6C1',
+        primaryDark: '#FF69B4',
+        secondary: '#87CEEB',
+        accent: '#98FB98',
+        gradient: 'linear-gradient(135deg, #FFB6C1 0%, #87CEEB 33%, #98FB98 66%, #FFFACD 100%)'
+    },
+    'starlight': {
+        name: 'Звездная ночь',
+        primary: '#191970',
+        primaryDark: '#000080',
+        secondary: '#E6E6FA',
+        accent: '#FFFACD',
+        gradient: 'linear-gradient(135deg, #191970 0%, #E6E6FA 50%, #FFFACD 100%)'
+    },
+    'moonlight': {
+        name: 'Лунный свет',
+        primary: '#F5F5F5',
+        primaryDark: '#E6E6FA',
+        secondary: '#B0C4DE',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F5F5F5 0%, #B0C4DE 50%, #FFE4B5 100%)'
+    },
+
+    // Классические пастельные
+    'cyan': {
+        name: 'Нежно-бирюзовая',
+        primary: '#AED6F1',
+        primaryDark: '#85C1E9',
+        secondary: '#D7BDE2',
+        accent: '#A8DADC',
+        gradient: 'linear-gradient(135deg, #AED6F1 0%, #85C1E9 100%)'
+    },
+    'lime': {
+        name: 'Свежая мята',
+        primary: '#D5F4E6',
+        primaryDark: '#ABEBC6',
+        secondary: '#AED6F1',
+        accent: '#D7BDE2',
+        gradient: 'linear-gradient(135deg, #D5F4E6 0%, #ABEBC6 100%)'
+    },
+    'orange': {
+        name: 'Мандариновая',
+        primary: '#FAD7A0',
+        primaryDark: '#F8C471',
+        secondary: '#F7B7C5',
+        accent: '#F7DC6F',
+        gradient: 'linear-gradient(135deg, #FAD7A0 0%, #F8C471 100%)'
+    },
+    'pink': {
+        name: 'Перламутровая',
+        primary: '#F7B7C5',
+        primaryDark: '#E8A3B8',
+        secondary: '#F7DC6F',
+        accent: '#D7BDE2',
+        gradient: 'linear-gradient(135deg, #F7B7C5 0%, #E8A3B8 100%)'
+    },
+    'indigo': {
+        name: 'Аметистовая',
+        primary: '#C39BD3',
+        primaryDark: '#AF7AC5',
+        secondary: '#F7B7C5',
+        accent: '#A8DADC',
+        gradient: 'linear-gradient(135deg, #C39BD3 0%, #AF7AC5 100%)'
+    },
+    'gold': {
+        name: 'Золотистая',
+        primary: '#F9E79F',
+        primaryDark: '#F7DC6F',
+        secondary: '#D7BDE2',
+        accent: '#F7B7C5',
+        gradient: 'linear-gradient(135deg, #F9E79F 0%, #F7DC6F 100%)'
+    },
+    'sunset': {
+        name: 'Вечерний закат',
+        primary: '#FAD7A0',
+        primaryDark: '#F8C471',
+        secondary: '#F7B7C5',
+        accent: '#D7BDE2',
+        gradient: 'linear-gradient(135deg, #FAD7A0 0%, #F7B7C5 50%, #D7BDE2 100%)'
+    },
+
+    // Дополнительные сезонные
+    'spring-breeze': {
+        name: 'Весенний бриз',
+        primary: '#E6E6FA',
+        primaryDark: '#D8BFD8',
+        secondary: '#98FB98',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #E6E6FA 0%, #98FB98 50%, #FFE4B5 100%)'
+    },
+    'summer-breeze': {
+        name: 'Летний бриз',
+        primary: '#87CEEB',
+        primaryDark: '#4682B4',
+        secondary: '#FFFACD',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #87CEEB 0%, #FFFACD 50%, #FFE4B5 100%)'
+    },
+    'autumn-wind': {
+        name: 'Осенний ветер',
+        primary: '#DEB887',
+        primaryDark: '#D2691E',
+        secondary: '#FFE4B5',
+        accent: '#F5DEB3',
+        gradient: 'linear-gradient(135deg, #DEB887 0%, #FFE4B5 50%, #F5DEB3 100%)'
+    },
+    'winter-snow': {
+        name: 'Зимний снег',
+        primary: '#F8F8FF',
+        primaryDark: '#E6E6FA',
+        secondary: '#B0E0E6',
+        accent: '#FFE4B5',
+        gradient: 'linear-gradient(135deg, #F8F8FF 0%, #B0E0E6 50%, #FFE4B5 100%)'
     }
 };
 
@@ -256,6 +556,7 @@ async function initializeApp() {
 
     loadTheme();
     loadColorTheme();
+    loadBackgroundEffects(); // Загружаем состояние фоновых эффектов
     await loadUserData();
     await loadProducts();
     await initializeAssortment();
@@ -956,35 +1257,45 @@ function updateProfile() {
         goTo('login');
         return;
     }
-    
+
     const hour = new Date().getHours();
     let greeting = 'ДОБРЫЙ ВЕЧЕР';
     if (hour < 12) greeting = 'ДОБРОЕ УТРО';
     else if (hour < 18) greeting = 'ДОБРЫЙ ДЕНЬ';
-    
+
     document.getElementById('welcome').textContent = `${greeting}, ${currentUser.username.toUpperCase()}`;
-    
+
+    // Проверяем и исправляем отрицательный баланс
+    let userBalance = currentUser.balance || 0;
+    if (userBalance < 0) {
+        console.warn('Обнаружен отрицательный баланс, устанавливаем в 0:', userBalance);
+        userBalance = 0;
+        currentUser.balance = 0;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        showNotification('Баланс исправлен: отрицательный баланс установлен в 0 ₴', 'warning');
+    }
+
     // Анимация изменения баланса
     const balanceElement = document.getElementById('balance');
     const currentBalance = parseFloat(balanceElement.textContent) || 0;
-    const newBalance = (currentUser.balance || 0).toFixed(2);
-    
+    const newBalance = userBalance.toFixed(2);
+
     if (currentBalance !== parseFloat(newBalance)) {
         animateValue(balanceElement, currentBalance, parseFloat(newBalance), 1000);
     } else {
         balanceElement.textContent = `${newBalance} ₴`;
     }
-    
+
     // Цвет баланса должен меняться в зависимости от темы
     balanceElement.style.color = '';
-    if (currentUser.balance === 0) {
+    if (userBalance === 0) {
         balanceElement.style.color = 'var(--primary-color)';
         balanceElement.classList.add('pulse');
     } else {
         balanceElement.style.color = 'inherit';
         balanceElement.classList.remove('pulse');
     }
-    
+
     // Заполняем все поля личных данных
     document.getElementById('profile-name').textContent = currentUser.full_name || '-';
     document.getElementById('profile-age').textContent = currentUser.age || calculateAgeFromClass(currentUser.class_name) || '-';
@@ -1311,7 +1622,30 @@ function updateFavoriteButton(productId) {
 function initializeAssortment() {
     const container = document.getElementById('items-container');
     if (!container) return;
-    
+
+    // Добавляем раздел быстрых комбо
+    const quickCombosSection = document.createElement('div');
+    quickCombosSection.className = 'quick-combos-section';
+    quickCombosSection.innerHTML = `
+        <h2 class="section-title">
+            <i class="fas fa-star"></i>
+            Быстрые комбо
+        </h2>
+        <div class="quick-combos-container" id="quick-combos-container"></div>
+    `;
+
+    // Вставляем перед основным контейнером
+    const assortmentScreen = document.getElementById('assortment');
+    if (assortmentScreen) {
+        const searchBar = assortmentScreen.querySelector('.search-bar');
+        if (searchBar) {
+            searchBar.insertAdjacentElement('afterend', quickCombosSection);
+        }
+    }
+
+    // Загружаем быстрые комбо
+    loadQuickCombos();
+
     // Показываем скелетоны загрузки
     container.innerHTML = '';
     for (let i = 0; i < 8; i++) {
@@ -1319,16 +1653,16 @@ function initializeAssortment() {
         skeleton.className = 'item-card skeleton skeleton-item';
         container.appendChild(skeleton);
     }
-    
+
     // Загружаем продукты с задержкой для демонстрации
     setTimeout(() => {
         container.innerHTML = '';
-        
+
         products.forEach((product, index) => {
             setTimeout(() => {
                 const quantity = cart[product.id] || 0;
                 const isFavorite = favorites.has(product.id);
-                
+
                 const itemCard = document.createElement('div');
                 itemCard.className = 'item-card';
                 itemCard.setAttribute('data-category', product.category);
@@ -1336,11 +1670,11 @@ function initializeAssortment() {
                 itemCard.setAttribute('data-gluten-free', product.isGlutenFree);
                 itemCard.setAttribute('data-price', product.price);
                 itemCard.setAttribute('data-calories', product.calories);
-                
+
                 itemCard.innerHTML = `
                     ${product.isNew ? '<div class="new-badge">NEW</div>' : ''}
-                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
-                            data-product="${product.id}" 
+                    <button class="favorite-btn ${isFavorite ? 'active' : ''}"
+                            data-product="${product.id}"
                             onclick="toggleFavorite('${product.id}')">
                         <i class="fas fa-heart"></i>
                     </button>
@@ -1349,7 +1683,7 @@ function initializeAssortment() {
                     </div>
                     <div class="item-name">${product.name}</div>
                     <div class="item-description">${product.description || ''}</div>
-                    
+
                     <!-- Аллергены -->
                     <div class="allergens">
                         ${product.allergens.map(allergen => `
@@ -1358,12 +1692,12 @@ function initializeAssortment() {
                             </div>
                         `).join('')}
                     </div>
-                    
+
                     <!-- Рейтинг -->
                     <div class="rating">
                         ${generateStarRating(product.rating)}
                     </div>
-                    
+
                     <div class="item-price">${product.price} ₴</div>
                     <div class="item-calories">${product.calories} ккал</div>
                     <div class="item-actions">
@@ -1385,14 +1719,14 @@ function initializeAssortment() {
                 slideIn(itemCard, 'up');
             }, index * 100);
         });
-        
+
         // Инициализация долгого нажатия
         initLongPress();
-        
+
     }, 1000);
-    
+
     document.getElementById('search-input').addEventListener('input', filterProducts);
-    
+
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -1400,6 +1734,207 @@ function initializeAssortment() {
             filterProducts();
         });
     });
+}
+
+// Загрузка быстрых комбо
+function loadQuickCombos() {
+    const container = document.getElementById('quick-combos-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    QUICK_COMBOS.forEach((combo, index) => {
+        setTimeout(() => {
+            const comboCard = document.createElement('div');
+            comboCard.className = 'combo-card';
+            comboCard.style.borderColor = combo.color;
+
+            // Рассчитываем общую стоимость и калории
+            let totalPrice = 0;
+            let totalCalories = 0;
+            let itemNames = [];
+
+            combo.items.forEach(itemId => {
+                const product = products.find(p => p.id === itemId);
+                if (product) {
+                    totalPrice += product.price;
+                    totalCalories += product.calories;
+                    itemNames.push(product.name);
+                }
+            });
+
+            // Применяем скидку
+            const discountAmount = totalPrice * (combo.discount / 100);
+            const finalPrice = totalPrice - discountAmount;
+
+            comboCard.innerHTML = `
+                <div class="combo-header">
+                    <i class="${combo.icon}" style="color: ${combo.color}"></i>
+                    <h3>${combo.name}</h3>
+                </div>
+                <div class="combo-description">${combo.description}</div>
+                <div class="combo-items">
+                    ${itemNames.map(name => `<span class="combo-item">${name}</span>`).join('')}
+                </div>
+                <div class="combo-stats">
+                    <div class="combo-calories">${totalCalories} ккал</div>
+                    <div class="combo-prices">
+                        <span class="original-price">${totalPrice} ₴</span>
+                        <span class="final-price">${finalPrice.toFixed(2)} ₴</span>
+                        <span class="discount-badge">-${combo.discount}%</span>
+                    </div>
+                </div>
+                <button class="btn-primary btn-combo" onclick="orderQuickCombo('${combo.id}')" style="background: ${combo.color}">
+                    <i class="fas fa-shopping-cart"></i>
+                    Заказать комбо
+                </button>
+            `;
+
+            container.appendChild(comboCard);
+            slideIn(comboCard, 'up');
+        }, index * 200);
+    });
+}
+
+// Заказ быстрого комбо
+function orderQuickCombo(comboId) {
+    if (!currentUser) {
+        showNotification('Для заказа необходимо войти в систему', 'error');
+        goTo('login');
+        return;
+    }
+
+    const combo = QUICK_COMBOS.find(c => c.id === comboId);
+    if (!combo) {
+        showNotification('Комбо не найдено', 'error');
+        return;
+    }
+
+    // Проверяем доступность всех блюд в комбо
+    const unavailableItems = [];
+    combo.items.forEach(itemId => {
+        const product = products.find(p => p.id === itemId);
+        if (!product) {
+            unavailableItems.push(itemId);
+        }
+    });
+
+    if (unavailableItems.length > 0) {
+        showNotification('Некоторые блюда из комбо недоступны', 'error');
+        return;
+    }
+
+    // Рассчитываем стоимость
+    let totalPrice = 0;
+    combo.items.forEach(itemId => {
+        const product = products.find(p => p.id === itemId);
+        if (product) {
+            totalPrice += product.price;
+        }
+    });
+
+    const discountAmount = totalPrice * (combo.discount / 100);
+    const finalPrice = totalPrice - discountAmount;
+
+    // Проверяем баланс
+    if (currentUser.balance < finalPrice) {
+        showNotification('Недостаточно средств на балансе', 'error');
+        goTo('payment');
+        return;
+    }
+
+    // Создаем элементы заказа
+    const orderItems = combo.items.map(itemId => {
+        const product = products.find(p => p.id === itemId);
+        return {
+            meal_id: itemId,
+            quantity: 1,
+            unit_price: product.price,
+            total_price: product.price
+        };
+    });
+
+    // Отправляем заказ
+    placeComboOrder(orderItems, totalPrice, discountAmount, finalPrice, combo.name);
+}
+
+// Оформление заказа комбо
+async function placeComboOrder(orderItems, totalAmount, discountAmount, finalAmount, comboName) {
+    showLoading(true);
+
+    try {
+        const data = await apiRequest('/api/orders', {
+            method: 'POST',
+            body: {
+                items: orderItems,
+                promocode_id: null, // Комбо имеет встроенную скидку
+                total_amount: totalAmount,
+                discount_amount: discountAmount,
+                final_amount: finalAmount,
+                combo_name: comboName
+            }
+        });
+
+        // Обновляем баланс пользователя
+        currentUser.balance -= finalAmount;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // Показываем детали заказа
+        const orderDetailsList = document.getElementById('order-details-list');
+        orderDetailsList.innerHTML = '';
+
+        orderItems.forEach((item, index) => {
+            setTimeout(() => {
+                const product = products.find(p => p.id == item.meal_id);
+                if (product) {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'order-detail-item';
+                    itemElement.innerHTML = `
+                        <span>${product.name} x${item.quantity}</span>
+                        <span>${item.total_price} ₴</span>
+                    `;
+                    orderDetailsList.appendChild(itemElement);
+                    slideIn(itemElement, 'up');
+                }
+            }, index * 100);
+        });
+
+        // Добавляем информацию о скидке комбо
+        setTimeout(() => {
+            const discountElement = document.createElement('div');
+            discountElement.className = 'order-detail-item';
+            discountElement.innerHTML = `
+                <span>Скидка комбо "${comboName}"</span>
+                <span>-${discountAmount} ₴</span>
+            `;
+            orderDetailsList.appendChild(discountElement);
+            slideIn(discountElement, 'up');
+        }, orderItems.length * 100);
+
+        setTimeout(() => {
+            const totalElement = document.createElement('div');
+            totalElement.className = 'order-detail-total';
+            totalElement.innerHTML = `
+                <span>Итого:</span>
+                <span>${finalAmount} ₴</span>
+            `;
+            orderDetailsList.appendChild(totalElement);
+            slideIn(totalElement, 'up');
+        }, (orderItems.length + 1) * 100);
+
+        // Запускаем конфетти
+        startConfetti();
+        createConfettiAnimation();
+
+        showNotification(`Комбо "${comboName}" успешно заказано!`, 'success');
+        goTo('Thx');
+
+    } catch (error) {
+        console.error('Ошибка оформления заказа комбо:', error);
+        showNotification(error.message || 'Ошибка оформления заказа', 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 
 function getAllergenName(allergen) {
@@ -1824,6 +2359,7 @@ function updateCartSummary() {
     
     totalCalories.textContent = calories;
     promoDiscount = activePromo ? (total * (activePromo.discount_percentage || activePromo.discount_percent) / 100) : 0;
+    promoDiscount = Math.min(promoDiscount, total); // Ограничиваем скидку суммой заказа
     const finalAmount = total - promoDiscount;
     
     // Анимация изменения сумм
@@ -2465,11 +3001,35 @@ function toggleSimpleMode() {
 function toggleHighContrast() {
     isHighContrast = !isHighContrast;
     document.body.classList.toggle('high-contrast', isHighContrast);
-    
+
     showNotification(
         isHighContrast ? 'Высококонтрастный режим активирован' : 'Высококонтрастный режим выключен',
         'success'
     );
+}
+
+// Переключение фоновых эффектов
+function toggleBackgroundEffects() {
+    isBackgroundEffects = !isBackgroundEffects;
+    const btn = document.getElementById('background-effects-btn');
+
+    if (isBackgroundEffects) {
+        btn.classList.add('active');
+        // Показываем все фоновые эффекты
+        document.querySelector('.morphing-bg').style.display = 'block';
+        document.querySelector('.background-particles').style.display = 'block';
+        document.getElementById('floating-shapes').style.display = 'block';
+        showNotification('Фоновые эффекты включены ✨', 'success');
+    } else {
+        btn.classList.remove('active');
+        // Скрываем все фоновые эффекты
+        document.querySelector('.morphing-bg').style.display = 'none';
+        document.querySelector('.background-particles').style.display = 'none';
+        document.getElementById('floating-shapes').style.display = 'none';
+        showNotification('Фоновые эффекты отключены', 'info');
+    }
+
+    localStorage.setItem('backgroundEffects', isBackgroundEffects);
 }
 
 // Случайное блюдо
@@ -3022,6 +3582,33 @@ function setTheme(theme) {
 function loadTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
+}
+
+// Загрузка состояния фоновых эффектов
+function loadBackgroundEffects() {
+    const savedEffects = localStorage.getItem('backgroundEffects');
+    if (savedEffects !== null) {
+        isBackgroundEffects = savedEffects === 'true';
+    }
+
+    // Применяем состояние эффектов
+    const btn = document.getElementById('background-effects-btn');
+    if (btn) {
+        if (isBackgroundEffects) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    }
+
+    // Показываем/скрываем эффекты
+    const morphingBg = document.querySelector('.morphing-bg');
+    const particles = document.querySelector('.background-particles');
+    const shapes = document.getElementById('floating-shapes');
+
+    if (morphingBg) morphingBg.style.display = isBackgroundEffects ? 'block' : 'none';
+    if (particles) particles.style.display = isBackgroundEffects ? 'block' : 'none';
+    if (shapes) shapes.style.display = isBackgroundEffects ? 'block' : 'none';
 }
 
 // Функция для анимации кнопок с частицами

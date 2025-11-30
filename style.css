@@ -1,19 +1,24 @@
-/* Основные переменные для светлой темы */
+        /* Основные переменные для светлой темы */
         :root {
             --primary-color: #00b377;
             --primary-dark: #009966;
             --secondary-color: #667eea;
             --accent-color: #764ba2;
-            --text-dark: #333333;
-            --text-light: #666666;
+            --text-dark: #1a1a1a;
+            --text-light: #555555;
+            --text-muted: #777777;
             --background: #f8f9fa;
-            --white: #ffffff;
+            --surface: #ffffff;
             --card-bg: #ffffff;
-            --border: #e9ecef;
-            --shadow: 0 2px 20px rgba(0,0,0,0.1);
+            --border: #e0e0e0;
+            --border-light: #f0f0f0;
+            --shadow: 0 2px 20px rgba(0,0,0,0.08);
+            --shadow-light: 0 1px 3px rgba(0,0,0,0.05);
             --radius: 12px;
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --hover-bg: #f8f9fa;
+            --active-bg: #e9ecef;
         }
 
         /* Темная тема */
@@ -668,18 +673,19 @@
         .form-container {
             max-width: 400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             padding: 40px;
             border-radius: var(--radius);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border);
             transition: all 0.3s ease;
+            color: var(--text-dark);
         }
 
         .form-container:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--card-bg);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
@@ -1468,7 +1474,7 @@
         }
 
         .item-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border-radius: var(--radius);
@@ -1476,17 +1482,18 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             text-align: center;
             transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border);
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
+            color: var(--text-dark);
         }
 
         .item-card:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--card-bg);
             transform: translateY(-10px) rotateX(5deg);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: var(--primary-color);
         }
 
         .item-image {
@@ -2192,7 +2199,7 @@
         }
 
         .modal-content {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: var(--radius);
@@ -2202,7 +2209,8 @@
             max-height: 90vh;
             overflow-y: auto;
             animation: scaleIn 0.3s ease-out;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border);
+            color: var(--text-dark);
         }
 
         @keyframes scaleIn {
@@ -2225,6 +2233,10 @@
             position: relative;
             background: var(--primary-color);
             color: var(--white);
+        }
+
+        .modal-header h3 {
+            color: var(--white) !important;
         }
 
         .modal-header h3 {
@@ -2272,10 +2284,12 @@
         }
 
         .promo-item {
-            background: var(--background);
+            background: var(--card-bg);
             padding: 20px;
             border-radius: var(--radius);
             border-left: 4px solid var(--primary-color);
+            border: 1px solid var(--border);
+            color: var(--text-dark);
         }
 
         .promo-code {
@@ -3502,6 +3516,33 @@
             color: var(--primary-color);
         }
 
+        /* Кнопка фоновых эффектов */
+        .background-effects-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .background-effects-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .background-effects-btn.active {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
         /* Сетка выбора тем */
         .theme-palette-grid {
             display: grid;
@@ -3902,3 +3943,188 @@
                 justify-content: center;
             }
         }
+
+/* Быстрые комбо */
+.quick-combos-section {
+    margin-bottom: 40px;
+}
+
+.quick-combos-section .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5em;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.quick-combos-section .section-title i {
+    color: var(--primary-color);
+    font-size: 1.2em;
+}
+
+.quick-combos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.combo-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.combo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    border-color: var(--primary-color);
+}
+
+.combo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.combo-card:hover::before {
+    opacity: 1;
+}
+
+.combo-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.combo-header i {
+    font-size: 2em;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0,179,119,0.1);
+}
+
+.combo-header h3 {
+    font-size: 1.3em;
+    color: var(--text-dark);
+    margin: 0;
+    font-weight: 700;
+}
+
+.combo-description {
+    color: var(--text-light);
+    margin-bottom: 20px;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.combo-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.combo-item {
+    background: var(--background);
+    color: var(--text-dark);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+    border: 1px solid var(--border);
+}
+
+.combo-stats {
+    margin-bottom: 20px;
+}
+
+.combo-calories {
+    color: var(--text-light);
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.combo-prices {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.original-price {
+    color: var(--text-light);
+    text-decoration: line-through;
+    font-size: 0.9em;
+}
+
+.final-price {
+    color: var(--primary-color);
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.discount-badge {
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+.btn-combo {
+    width: 100%;
+    padding: 15px;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-combo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* Responsive для комбо */
+@media (max-width: 768px) {
+    .quick-combos-container {
+        grid-template-columns: 1fr;
+    }
+
+    .combo-card {
+        padding: 20px;
+    }
+
+    .combo-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .combo-header h3 {
+        font-size: 1.1em;
+    }
+
+    .combo-prices {
+        justify-content: center;
+    }
+}
