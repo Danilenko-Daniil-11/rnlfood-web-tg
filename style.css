@@ -4170,3 +4170,461 @@
         font-size: 1.1em;
     }
 }
+
+/* Enhanced Button Animations */
+.btn-primary, .btn-secondary, .category-btn, .amount-btn, .add-to-cart, .quantity-btn {
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-primary::before, .btn-secondary::before, .category-btn::before, .amount-btn::before, .add-to-cart::before, .quantity-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.6s ease;
+    z-index: 1;
+}
+
+.btn-primary:hover::before, .btn-secondary:hover::before, .category-btn:hover::before, .amount-btn:hover::before, .add-to-cart:hover::before, .quantity-btn:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover, .btn-secondary:hover, .category-btn:hover, .amount-btn:hover, .add-to-cart:hover, .quantity-btn:hover {
+    transform: translateY(-3px) scale(1.02) rotateX(5deg);
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.2),
+        0 0 40px rgba(0,179,119,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    filter: brightness(1.1) saturate(1.2) contrast(1.1);
+}
+
+.btn-primary:active, .btn-secondary:active, .category-btn:active, .amount-btn:active, .add-to-cart:active, .quantity-btn:active {
+    transform: translateY(-1px) scale(0.98) rotateX(0deg);
+    transition: all 0.1s ease;
+    box-shadow:
+        0 4px 15px rgba(0,0,0,0.1),
+        inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Pulse animation for important buttons */
+.btn-primary.pulse, .add-to-cart.pulse {
+    animation: buttonPulse 2s infinite;
+}
+
+@keyframes buttonPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0,179,119,0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(0,179,119,0.5);
+    }
+}
+
+/* Glow effect for special buttons */
+.btn-primary.glow, .add-to-cart.glow {
+    box-shadow: 0 0 20px rgba(0,179,119,0.4);
+    animation: buttonGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes buttonGlow {
+    from {
+        box-shadow: 0 0 20px rgba(0,179,119,0.4);
+    }
+    to {
+        box-shadow: 0 0 30px rgba(0,179,119,0.8);
+    }
+}
+
+/* Bounce animation for success states */
+.btn-primary.bounce, .add-to-cart.bounce {
+    animation: buttonBounce 0.6s ease;
+}
+
+@keyframes buttonBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Shake animation for error states */
+.btn-primary.shake, .add-to-cart.shake {
+    animation: buttonShake 0.5s ease;
+}
+
+@keyframes buttonShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Elastic scale animation */
+.btn-primary.elastic, .add-to-cart.elastic {
+    animation: elasticScale 0.8s ease;
+}
+
+@keyframes elasticScale {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+    40% { transform: scale(0.95); }
+    60% { transform: scale(1.05); }
+    80% { transform: scale(0.98); }
+    100% { transform: scale(1); }
+}
+
+/* Magnetic hover effect */
+.btn-primary.magnetic, .btn-secondary.magnetic, .category-btn.magnetic {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-primary.magnetic:hover, .btn-secondary.magnetic:hover, .category-btn.magnetic:hover {
+    transform: translateY(-3px) rotateX(10deg);
+}
+
+/* Liquid button effect */
+.btn-primary.liquid::after, .add-to-cart.liquid::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.btn-primary.liquid:hover::after, .add-to-cart.liquid:hover::after {
+    transform: translateX(100%);
+}
+
+/* Morphing button shape */
+.btn-primary.morph, .add-to-cart.morph {
+    border-radius: 50px;
+    transition: border-radius 0.3s ease;
+}
+
+.btn-primary.morph:hover, .add-to-cart.morph:hover {
+    border-radius: 10px;
+}
+
+/* 3D button effect */
+.btn-primary.three-d, .btn-secondary.three-d {
+    background: linear-gradient(145deg, var(--primary-color), var(--primary-dark));
+    box-shadow:
+        0 4px 8px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.1);
+}
+
+.btn-primary.three-d:hover, .btn-secondary.three-d:hover {
+    box-shadow:
+        0 8px 16px rgba(0,0,0,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+
+/* Neon button effect */
+.btn-primary.neon, .add-to-cart.neon {
+    box-shadow:
+        0 0 5px var(--primary-color),
+        0 0 10px var(--primary-color),
+        0 0 15px var(--primary-color);
+    animation: neonFlicker 2s infinite alternate;
+}
+
+@keyframes neonFlicker {
+    from {
+        box-shadow:
+            0 0 5px var(--primary-color),
+            0 0 10px var(--primary-color),
+            0 0 15px var(--primary-color);
+    }
+    to {
+        box-shadow:
+            0 0 10px var(--primary-color),
+            0 0 20px var(--primary-color),
+            0 0 30px var(--primary-color);
+    }
+}
+
+/* Rainbow button effect */
+.btn-primary.rainbow, .add-to-cart.rainbow {
+    background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    animation: rainbowShift 3s ease infinite;
+}
+
+@keyframes rainbowShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Ice button effect */
+.btn-primary.ice, .add-to-cart.ice {
+    background: linear-gradient(145deg, #e6f3ff, #b3d9ff);
+    border: 2px solid #99ccff;
+    color: #004d99;
+    box-shadow: 0 4px 15px rgba(153, 204, 255, 0.3);
+}
+
+.btn-primary.ice:hover, .add-to-cart.ice:hover {
+    background: linear-gradient(145deg, #cce7ff, #99ccff);
+    box-shadow: 0 6px 20px rgba(153, 204, 255, 0.5);
+}
+
+/* Fire button effect */
+.btn-primary.fire, .add-to-cart.fire {
+    background: linear-gradient(145deg, #ff6b35, #f7931e);
+    border: 2px solid #ff4500;
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    animation: fireFlicker 1.5s infinite alternate;
+}
+
+@keyframes fireFlicker {
+    from {
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    }
+    to {
+        box-shadow: 0 4px 20px rgba(255, 107, 53, 0.8);
+    }
+}
+
+/* Crystal button effect */
+.btn-primary.crystal, .add-to-cart.crystal {
+    background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(173,216,230,0.8));
+    border: 2px solid rgba(173,216,230,0.6);
+    color: #2c5282;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(173,216,230,0.3);
+}
+
+.btn-primary.crystal:hover, .add-to-cart.crystal:hover {
+    background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(173,216,230,0.9));
+    box-shadow: 0 6px 20px rgba(173,216,230,0.5);
+}
+
+/* Magnetic attraction effect */
+.btn-primary.magnetic-hover, .add-to-cart.magnetic-hover {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-primary.magnetic-hover:hover, .add-to-cart.magnetic-hover:hover {
+    transform: scale(1.1) rotate(2deg);
+    box-shadow: 0 10px 30px rgba(0,179,119,0.4);
+}
+
+/* Breathing animation */
+.btn-primary.breathe, .add-to-cart.breathe {
+    animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+
+/* Jelly button effect */
+.btn-primary.jelly, .add-to-cart.jelly {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.btn-primary.jelly:active, .add-to-cart.jelly:active {
+    transform: scale(0.9);
+    transition: transform 0.1s ease;
+}
+
+/* Quantum button effect */
+.btn-primary.quantum, .add-to-cart.quantum {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+    background-size: 300% 300%;
+    animation: quantumShift 4s ease infinite;
+    box-shadow: 0 4px 15px rgba(0,179,119,0.3);
+}
+
+@keyframes quantumShift {
+    0%, 100% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+}
+
+/* Holographic button effect */
+.btn-primary.holographic, .add-to-cart.holographic {
+    background: linear-gradient(45deg,
+        var(--primary-color),
+        var(--secondary-color),
+        var(--accent-color),
+        var(--primary-color));
+    background-size: 400% 400%;
+    animation: holographic 3s ease infinite;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+@keyframes holographic {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Aurora button effect */
+.btn-primary.aurora, .add-to-cart.aurora {
+    background: linear-gradient(45deg,
+        #ff6b6b,
+        #4ecdc4,
+        #45b7d1,
+        #96ceb4,
+        #ffeaa7,
+        #dda0dd,
+        #ff6b6b);
+    background-size: 400% 400%;
+    animation: aurora 6s ease infinite;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+@keyframes aurora {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Cyberpunk button effect */
+.btn-primary.cyberpunk, .add-to-cart.cyberpunk {
+    background: linear-gradient(45deg, #ff0080, #00ff80, #8000ff);
+    border: 2px solid #00ffff;
+    color: #ffffff;
+    text-shadow: 0 0 10px #00ffff;
+    box-shadow:
+        0 0 10px rgba(0,255,255,0.3),
+        inset 0 0 10px rgba(0,255,255,0.1);
+    animation: cyberpunkGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes cyberpunkGlow {
+    from {
+        box-shadow:
+            0 0 10px rgba(0,255,255,0.3),
+            inset 0 0 10px rgba(0,255,255,0.1);
+    }
+    to {
+        box-shadow:
+            0 0 20px rgba(0,255,255,0.6),
+            inset 0 0 20px rgba(0,255,255,0.2);
+    }
+}
+
+/* Apply enhanced animations to specific buttons */
+.btn-primary, .add-to-cart {
+    /* Default enhanced animation */
+}
+
+.btn-primary:hover, .add-to-cart:hover {
+    /* Enhanced hover effects */
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0,179,119,0.4);
+}
+
+.btn-primary:active, .add-to-cart:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+/* Special effects for different button types */
+.category-btn {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.category-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.quantity-btn {
+    transition: all 0.2s ease;
+}
+
+.quantity-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.quantity-btn:active {
+    transform: scale(0.95);
+}
+
+/* Loading state animations */
+.btn-primary.loading, .add-to-cart.loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-primary.loading::after, .add-to-cart.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid rgba(255,255,255,0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success state animations */
+.btn-primary.success, .add-to-cart.success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    animation: successPulse 0.6s ease;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Error state animations */
+.btn-primary.error, .add-to-cart.error {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    animation: errorShake 0.5s ease;
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Disabled state */
+.btn-primary:disabled, .btn-secondary:disabled, .add-to-cart:disabled, .quantity-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+
+.btn-primary:disabled:hover, .btn-secondary:disabled:hover, .add-to-cart:disabled:hover, .quantity-btn:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}

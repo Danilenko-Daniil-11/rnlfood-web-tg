@@ -1,24 +1,36 @@
 // Конфигурация API
 const API_BASE_URL = window.location.origin;
 
-// Основные переменные
-let currentUser = null;
-let cart = {};
-let activePromo = null;
-let promoDiscount = 0;
-let selectedAmount = 100;
-let products = [];
-let currentOrderPage = 1;
-let ordersPerPage = 10;
-let favorites = new Set();
-let achievements = [];
-let notifications = [];
-let isParentMode = false;
-let isSimpleMode = false;
-let is8BitMode = false;
-let isHighContrast = false;
-let voiceRecognition = null;
-let konamiCode = [];
+// Основные переменные состояния приложения (оптимизировано)
+const AppState = {
+    currentUser: null,
+    cart: {},
+    activePromo: null,
+    promoDiscount: 0,
+    selectedAmount: 100,
+    products: [],
+    currentOrderPage: 1,
+    ordersPerPage: 10,
+    favorites: new Set(),
+    achievements: [],
+    notifications: [],
+    isParentMode: false,
+    isSimpleMode: false,
+    is8BitMode: false,
+    isHighContrast: false,
+    voiceRecognition: null,
+    konamiCode: [],
+    currentWeekStart: null,
+    mealPlan: {},
+    currentColorScheme: 'emerald'
+};
+
+// Глобальные переменные для обратной совместимости (ссылки на AppState)
+let { currentUser, cart, activePromo, promoDiscount, selectedAmount, products,
+      currentOrderPage, ordersPerPage, favorites, achievements, notifications,
+      isParentMode, isSimpleMode, is8BitMode, isHighContrast, voiceRecognition,
+      konamiCode, currentWeekStart, mealPlan, currentColorScheme } = AppState;
+
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
 
 // Функции для работы с уведомлениями
@@ -28,12 +40,14 @@ async function loadNotifications() {
     try {
         const data = await apiRequest('/api/notifications?limit=20');
         notifications = data.notifications || [];
+        AppState.notifications = notifications;
 
         updateNotificationsBadge();
         displayNotifications();
 
     } catch (error) {
         console.error('Ошибка загрузки уведомлений:', error);
+        showNotification('Не удалось загрузить уведомления', 'error');
     }
 }
 
@@ -178,17 +192,13 @@ function toggleNotifications() {
     }
 }
 
-// Инициализация переменных планировщика питания
-let currentWeekStart;
-let mealPlan;
-
 // Функция инициализации переменных планировщика
 function initializeMealPlannerVariables() {
-    if (typeof currentWeekStart === 'undefined') {
-        currentWeekStart = new Date();
+    if (typeof AppState.currentWeekStart === 'undefined') {
+        AppState.currentWeekStart = new Date();
     }
-    if (typeof mealPlan === 'undefined') {
-        mealPlan = {};
+    if (typeof AppState.mealPlan === 'undefined') {
+        AppState.mealPlan = {};
     }
 }
 
@@ -318,8 +328,7 @@ const COLOR_THEMES = {
     }
 };
 
-// Текущая цветовая схема
-let currentColorScheme = 'emerald';
+
 
 // Анимации
 function animateValue(element, start, end, duration) {
